@@ -192,6 +192,7 @@ Hash:
 ### Phase 3: LLM Integration
 
 - [ ] AWS Bedrock client setup
+- [ ] System prompt design and testing (concise airline assistant persona, with few-shot examples to ensure brief, relevant responses)
 - [ ] Embedding generation (Titan)
 - [ ] LLM query handler (Sonnet 4.5)
 - [ ] Cache miss flow implementation

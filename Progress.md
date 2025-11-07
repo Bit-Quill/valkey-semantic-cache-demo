@@ -32,6 +32,7 @@
 - [ ] AWS Bedrock client setup
 - [ ] Titan Embeddings integration
 - [ ] Claude Sonnet 4.5 integration
+- [ ] System prompt design and testing (concise airline assistant persona, with few-shot examples to ensure brief, relevant responses)
 - [ ] Embedding generation service
 - [ ] Cache miss handler
 - [ ] Auto-cache implementation
