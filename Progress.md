@@ -19,7 +19,7 @@
 
 ### Phase 2: Backend Core 🚧
 
-- [ ] Project scaffold and directory structure
+- [x] Project scaffold and directory structure
 - [ ] Express server with TypeScript setup
 - [ ] Valkey Glide client integration
 - [ ] Health check endpoints
@@ -64,7 +64,7 @@
 
 ---
 
-## 🎯 Current Milestone
+## 🎯 Past Milestones
 
 **Milestone 1: Project Initialization Complete** ✅
 
@@ -85,7 +85,7 @@
 
 ---
 
-## 🚀 Next Milestone
+## 🚀 Current Milestone
 
 **Milestone 2: Backend Scaffold & Valkey Connection**
 
