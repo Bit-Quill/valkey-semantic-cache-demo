@@ -20,7 +20,7 @@
 ### Phase 2: Backend Core 🚧
 
 - [x] Project scaffold and directory structure
-- [ ] Express server with TypeScript setup
+- [x] Express server with TypeScript setup
 - [ ] Valkey Glide client integration
 - [ ] Health check endpoints
 - [ ] Vector index creation
