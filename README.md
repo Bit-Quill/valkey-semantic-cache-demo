@@ -52,7 +52,7 @@ This application provides developers and AWS customers with a concrete, measurab
 - AWS Lambda execution role with permissions for Bedrock, ElastiCache, CloudWatch
 - ElastiCache (Valkey) cluster configured
 - AWS CLI configured with appropriate credentials
-- Python 3.11+ (for Strands agents) or Node.js 20+ (depending on implementation choice)
+- Python 3.12+ (for Strands agents)
 
 ### Running the Application
 
@@ -122,7 +122,7 @@ aws lambda invoke \
 
 ### Development
 
-- **Python 3.11+**: Primary language for Strands agents (or Node.js/TypeScript for alternative implementation)
+- **Python 3.12+**: Primary language for Strands agents
 - **Conventional Commits**: Git commit message format
 - **CloudFormation/SAM**: Infrastructure as Code (when applicable)
 
