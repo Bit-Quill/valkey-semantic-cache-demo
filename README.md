@@ -1,273 +1,275 @@
-# Airline Helpdesk Chat App
+# Retail Support Desk - Semantic Caching Demo
 
-An AI-powered airline helpdesk demonstrating measurable cost and time savings through semantic caching with Valkey vector database and AWS Bedrock.
+An AI-powered retail customer support system demonstrating measurable cost and performance benefits through semantic caching with ElastiCache (Valkey), AWS Bedrock AgentCore, and multi-agent orchestration.
 
 ## 🎯 Project Goals
 
-This application showcases the real-world value of semantic search and caching by:
+This application provides developers and AWS customers with a concrete, measurable demonstration of cost and performance benefits achievable through semantic caching in AI applications. The demo serves as a reference implementation showcasing how ElastiCache's vector search capabilities combined with Titan embeddings enable intelligent response caching in a modern multi-agent application deployed on Bedrock AgentCore.
 
-- Answering customer questions instantly when semantically similar questions exist in cache
-- Demonstrating dollar savings (avoiding LLM API calls) and time savings (sub-100ms cache responses)
-- Providing a modern, conference-ready demo of Valkey's vector search capabilities
+**Key Demonstrations:**
+
+- Handling request surges during peak sales events (e.g., Black Friday)
+- Reducing response latency from seconds to milliseconds through semantic caching
+- Cutting LLM token costs by avoiding redundant agent calls
+- Multi-agent orchestration using AWS Bedrock AgentCore and Strands framework
+- Real-time metrics visualization via CloudWatch Dashboard
 
 ## ✨ Key Features
 
-- **Semantic Question Matching**: Uses vector embeddings to find similar questions (0.85 similarity threshold)
-- **Real-time Savings Display**: Shows accumulated cost and time savings with semi-opaque overlay
-- **Similarity Score Visualization**: Displays how closely cached questions match user queries
-- **Intelligent Fallback**: Automatically queries AWS Bedrock when no cached answer meets threshold
-- **Auto-cache Learning**: Saves new LLM responses to improve future performance
-- **Modern UI**: Inspired by Brave's new tab design with centered chat interface
+- **Semantic Caching**: Uses Titan embeddings with HNSW algorithm (0.85 similarity threshold) to identify semantically similar requests
+- **Multi-Agent Architecture**: SupportAgent orchestrates with OrderTrackingAgent using Strands framework
+- **Intelligent Cache Layer**: @entrypoint intercepts requests before agent invocation, returning cached responses in <100ms
+- **Agent Tooling**: OrderTrackingAgent uses decorated tools to check order status and delivery information
+- **Real-time Metrics**: CloudWatch Dashboard visualizes latency reduction, cost savings, cache efficiency, and match scores
+- **Traffic Simulation**: Lambda-based ramp-up simulator mimics incident spikes (1 → 100 requests/second)
+- **Conference-Ready**: Live metrics suitable for projection, optional cache reset between demos
 
 ## 🏗️ Architecture
 
-```
-┌─────────────┐
-│   Frontend  │ (React + TypeScript)
-│  (Port 3000)│
-└──────┬──────┘
-       │
-       │ HTTP/WebSocket
-       │
-┌──────▼──────┐
-│   Backend   │ (Express + TypeScript + Valkey Glide)
-│             │
-└──┬───────┬──┘
-   │       │
-   │       │
-   ▼       ▼
-┌─────┐  ┌──────────┐
-│Valkey│  │  Bedrock │
-│Vector│  │ (Sonnet  │
-│  DB  │  │   4.5)   │
-└─────┘  └──────────┘
-```
+![Architecture Diagram](./semantic_support_desk_arch.png)
 
 ### Data Flow
 
-1. User asks question → Frontend sends to Backend
-2. Backend generates embedding (Bedrock Titan Embeddings)
-3. Backend searches Valkey vector index for similar questions
-4. **If match found (≥0.85 similarity)**: Return cached answer, update stats
-5. **If no match**: Query Bedrock LLM, cache response with embedding, update stats
-6. Frontend displays answer + savings stats
+1. **Client** initiates request via **API Gateway** to **Ramp-up Simulator** (Lambda)
+2. **Lambda** gradually increases throughput (1 → 100 requests/second over 30 seconds)
+3. **@entrypoint** generates Titan embedding and queries **ElastiCache** vector index
+4. **Cache Hit (≥0.85 similarity)**:
+   - Returns cached response immediately (<100ms)
+   - Logs metrics: latency, avoided cost, match score
+5. **Cache Miss**:
+   - Forwards to **SupportAgent** (Claude Sonnet 4.0)
+   - **SupportAgent** analyzes request, consults **OrderTrackingAgent** if needed
+   - **OrderTrackingAgent** uses `@tool` decorated functions to check order status
+   - Response returned to **@entrypoint**, cached with embedding
+6. **CloudWatch** receives metrics for all requests (cache hits/misses, latency, costs)
+7. **Dashboard** visualizes cumulative effectiveness in real-time
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- AWS credentials configured (for Bedrock access)
-- Node.js 20+ (for local development)
+- AWS Account with Bedrock access (Sonnet 4.0, Sonnet 3.5, Titan Embeddings)
+- AWS Lambda execution role with permissions for Bedrock, ElastiCache, CloudWatch
+- ElastiCache (Valkey) cluster configured
+- AWS CLI configured with appropriate credentials
+- Python 3.11+ (for Strands agents) or Node.js 20+ (depending on implementation choice)
 
 ### Running the Application
 
 1. **Clone the repository**
 
-   ```bash
-   git clone <repository-url>
-   cd airline-helpdesk-chat-app
-   ```
+```bash
+   git clone https://github.com/vasigorc/valkey-semantic-cache-demo.git
+   cd valkey-semantic-cache-demo
+```
 
 2. **Set up AWS credentials**
 
-   ```bash
+```bash
    # in ~/.aws/credentials
    [default]
    aws_access_key_id=your_key
    aws_secret_access_key=your_secret
    aws_region=us-east-1
-   ```
+```
 
-   or
+3. **Trigger simulation via Web Console or CLI**
 
-   ```bash
-   export AWS_ACCESS_KEY_ID=your_key
-   export AWS_SECRET_ACCESS_KEY=your_secret
-   export AWS_REGION=us-east-1
-   ```
+```bash
+   # Via AWS CLI
+   aws lambda invoke \
+     --function-name RampUpSimulator \
+     --payload '{"cache_enabled": true}' \
+     response.json
+```
 
-3. **Start the application**
+4. **View metrics**
 
-   ```bash
-   docker-compose up
-   ```
+   Navigate to CloudWatch Dashboard in AWS Console to observe:
 
-4. **Open your browser**
-
-   ```
-   http://localhost:3000
-   ```
+   - Average latency reduction
+   - Bedrock cost savings
+   - Cache hit ratio
+   - Match score distribution
 
 ### Resetting the Demo
 
-For conference presentations, you can reset the cache and stats:
-
-**Option 1: Restart containers**
+For conference presentations, reset the cache between runs:
 
 ```bash
-docker-compose down -v
-docker-compose up
-```
-
-**Option 2: Use reset script** (when implemented)
-
-```bash
-./scripts/reset-demo.sh
+aws lambda invoke \
+  --function-name CacheResetLambda \
+  --payload '{"action": "flush"}' \
+  reset-response.json
 ```
 
 ## 🛠️ Tech Stack
 
-### Frontend
+### Core Infrastructure
 
-- **React** with TypeScript
-- **Vite** for fast development
-- Modern CSS with semi-opaque overlays
+- **AWS Bedrock AgentCore**: Multi-agent runtime with Strands framework
+- **AWS Lambda**: Serverless compute for simulation and cache management
+- **API Gateway**: HTTP endpoint for client requests
+- **ElastiCache (Valkey)**: Vector database with HNSW indexing
+- **CloudWatch**: Metrics aggregation and dashboard visualization
 
-### Backend
+### AI Components
 
-- **Node.js** with TypeScript
-- **Express** for REST API
-- **Valkey Glide** for vector database operations
-- **AWS SDK** for Bedrock integration
+- **Claude Sonnet 4.0**: Primary SupportAgent for complex query analysis
+- **Claude Sonnet 3.5**: OrderTrackingAgent for lightweight tool invocations
+- **Titan Embeddings**: Generate 1536-dimensional vectors for semantic search
+- **Strands Framework**: Agent orchestration, @entrypoint and @tool decorators
 
-### Infrastructure
+### Development
 
-- **Valkey Bundle** (vector database with search module)
-- **AWS Bedrock** (Sonnet 4.5 for LLM, Titan for embeddings)
-- **Docker Compose** for orchestration
+- **Python 3.11+**: Primary language for Strands agents (or Node.js/TypeScript for alternative implementation)
+- **Conventional Commits**: Git commit message format
+- **CloudFormation/SAM**: Infrastructure as Code (when applicable)
 
 ## 📊 Data Structure
 
 ### Vector Index (Semantic Search)
 
 ```
-Key: q:vector:{uuid}
+Key: request:vector:{uuid}
 Fields:
-  - question_id (TAG)
+  - request_id (TAG)
   - embedding (VECTOR HNSW, 1536 dimensions)
   - timestamp (NUMERIC)
 ```
 
-### Question-Answer Store
+### Request-Response Store
 
 ```
-Key: qa:{question_id}
+Key: rr:{request_id}
 Hash:
-  - question (string)
-  - answer (string)
-  - tokens_used (numeric)
-  - cost (numeric)
+  - request_text (string)
+  - response_text (string)
+  - tokens_input (numeric)
+  - tokens_output (numeric)
+  - cost_dollars (numeric)
   - created_at (timestamp)
+  - agent_chain (string) # e.g., "SupportAgent->OrderTrackingAgent"
 ```
 
-### Stats Store
+### Metrics Store
 
 ```
-Key: stats:global
+Key: metrics:global
 Hash:
-  - total_questions (numeric)
+  - total_requests (numeric)
   - cache_hits (numeric)
   - cache_misses (numeric)
-  - total_savings_dollars (numeric)
-  - total_savings_seconds (numeric)
+  - total_cost_savings_dollars (numeric)
+  - avg_hit_proximity_match_score (numeric)
+  - avg_latency_cached_ms (numeric)
+  - avg_latency_uncached_ms (numeric)
 ```
 
-## 🗺️ Project Roadmap
+## 🗺️ Project Timeline
 
-### Phase 1: Foundation ✅
+### Task 1: Foundation ✅
 
-- [x] Project specification and architecture
-- [x] Technology stack decisions
-- [x] Repository structure
+- [ ] AWS account setup and Bedrock access verification
+- [ ] IAM role configuration (Lambda, Bedrock, ElastiCache, CloudWatch)
+- [x] Repository structure and collaboration workflow
+- [x] Architecture document and technical narrative
 
-### Phase 2: Backend Core (In Progress)
+### Task 2: ElastiCache Integration (In Progress)
 
-- [ ] Express server with health endpoints
-- [ ] Valkey Glide client integration
-- [ ] Vector index creation and management
-- [ ] Stats tracking implementation
-- [ ] Docker-compose configuration
+- [ ] ElastiCache (Valkey) cluster provisioning
+- [ ] Vector index schema creation (HNSW, 1536 dimensions)
+- [ ] @entrypoint implementation in AgentCore
+- [ ] Titan Embeddings integration for semantic search
+- [ ] Basic cache hit/miss logic
 
-### Phase 3: LLM Integration
+### Task 3: SupportAgent Integration
 
-- [ ] AWS Bedrock client setup
-- [ ] System prompt design and testing (concise airline assistant persona, with few-shot examples to ensure brief, relevant responses)
-- [ ] Embedding generation (Titan)
-- [ ] LLM query handler (Sonnet 4.5)
-- [ ] Cache miss flow implementation
-- [ ] Auto-caching of new responses
+- [ ] SupportAgent deployment on AgentCore
+- [ ] System prompt design for retail support context
+- [ ] Integration with @entrypoint for cache misses
+- [ ] End-to-end test: cache miss → SupportAgent → cache write
 
-### Phase 4: Frontend Development
+### Task 4: CloudWatch Integration
 
-- [ ] React app scaffold
-- [ ] Chat interface (centered design)
-- [ ] Stats overlay (semi-opaque)
-- [ ] Similarity score display
-- [ ] Error handling UI
-- [ ] Loading states
+- [ ] Metrics emission from @entrypoint (latency, cost, hit ratio)
+- [ ] CloudWatch custom metric definitions
+- [ ] Dashboard creation with real-time visualization
+- [ ] Alerts configuration (optional)
 
-### Phase 5: Integration & Testing
+### Task 5: Multi-Agent Scenario
 
-- [ ] End-to-end flow testing
-- [ ] Error handling (4xx, 5xx)
-- [ ] Network failure handling
+- [ ] OrderTrackingAgent deployment (Sonnet 3.5)
+- [ ] @tool decorator implementation for order status checks
+- [ ] Agent orchestration: SupportAgent → OrderTrackingAgent
+- [ ] Tool invocation testing and validation
+
+### Task 6: Integration & Testing
+
+- [ ] End-to-end flow validation
+- [ ] Error handling (network failures, tool errors, agent timeouts)
 - [ ] Performance optimization
+- [ ] Seed data creation (sample requests)
 
-### Phase 6: Demo Preparation
+### Task 7: Simulation & Presentation Layer
 
-- [ ] Seed database with 30-40 Q&A pairs
-- [ ] Reset mechanism
-- [ ] Demo script/walkthrough
-- [ ] Final polish and bug fixes
+- [ ] Ramp-up Lambda implementation (1 → 100 requests/second)
+- [ ] API Gateway configuration
+- [ ] Client interface (Web Console or CLI)
+- [ ] Cache reset Lambda
+- [ ] Demo script and walkthrough
 
 ## 🎪 Conference Demo Flow
 
-1. **Fresh Start**: Show empty/reset state
-2. **First Question**: "How do I change my seat?"
-   - Cache miss → LLM call
-   - Show cost: ~$0.002
-   - Show time: ~2.5 seconds
-3. **Exact Repeat**: Same question
-   - Cache hit
-   - Show savings: $0.002, 2.4 seconds
-4. **Semantic Match**: "How can I modify my seat assignment?"
-   - Cache hit with 0.91 similarity
-   - Show cumulative savings
-5. **New Question**: Demonstrates cache growth
+1. **Fresh Start**: Invoke CacheResetLambda, show CloudWatch Dashboard (all metrics at zero)
+2. **First Request**: "My order stays in preparing for three days"
+   - Cache miss → Full agent chain (SupportAgent → OrderTrackingAgent)
+   - Dashboard shows: ~2.5s latency, ~$0.003 cost
+3. **Ramp-up Simulation**: Trigger Lambda with 30-second ramp (1 → 100 req/s)
+   - Subsequent similar requests ("I bought a present but you haven't shipped it yet!")
+   - Dashboard shows: Rising cache hit ratio, dropping average latency
+4. **Steady State**: After 50+ requests
+   - Cache hit ratio: 85-90%
+   - Average latency: <150ms
+   - Cost savings: ~$0.10 accumulated
+5. **Semantic Match Demonstration**: "Tracking number reads labelled for shipper, no change after 5 days"
+   - Cache hit with 0.88 similarity score
+   - Response time: <100ms
+6. **Reset**: Clear cache to demonstrate again if needed
 
 ## 📝 Configuration
 
 ### Environment Variables
 
-The application supports both Claude Sonnet 4.0 and 4.5 models
-via the `BEDROCK_MODEL_ID` environment variable.
-
-**Backend**
+**AgentCore / Lambda**
 
 ```env
-VALKEY_HOST=valkey
-VALKEY_PORT=6379
 AWS_REGION=us-east-1
-BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-5-v2
-EMBEDDING_MODEL_ID=amazon.titan-embed-text-v1
+ELASTICACHE_ENDPOINT=your-cluster.cache.amazonaws.com:6379
+BEDROCK_SUPPORT_AGENT_MODEL=anthropic.claude-sonnet-4-20250514
+BEDROCK_TRACKING_AGENT_MODEL=anthropic.claude-sonnet-3-5-v2
+EMBEDDING_MODEL=amazon.titan-embed-text-v1
 SIMILARITY_THRESHOLD=0.85
-PORT=4000
+CLOUDWATCH_NAMESPACE=SemanticSupportDesk
 ```
 
-**Frontend**
+**Simulation Parameters**
 
 ```env
-VITE_API_URL=http://localhost:4000
+RAMP_START_RPS=1
+RAMP_END_RPS=100
+RAMP_DURATION_SECONDS=30
+REQUEST_TEMPLATES_PATH=./templates/requests.json
 ```
 
 ## 🤝 Development Principles
 
-- **Incremental Development**: Small, testable changes
-- **Commit Often**: Frequent commits with clear messages
-- **TDD Where Applicable**: Red → Green → Refactor for business logic
-- **Error Handling First**: No silent failures, user-friendly error messages
-- **Progress Tracking**: See `Progress.md` for current status
+- **Incremental Progress**: Small, testable steps with frequent Git commits
+- **Conventional Commits**: Structured commit messages (feat:, fix:, docs:)
+- **Red → Green → Refactor**: TDD approach for cacheable business logic
+- **Error Handling First**: No silent failures, comprehensive logging
+- **Progress Tracking**: Maintained via `Progress.md` at repository root
+- **Immediate Error Resolution**: Stop and fix blockers before proceeding
 
 ## 📦 Project Structure
 
@@ -275,61 +277,48 @@ VITE_API_URL=http://localhost:4000
 valkey-semantic-cache-demo/
 ├── README.md
 ├── Progress.md
-├── docker-compose.yml
-├── backend/
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── valkey/
-│   │   ├── bedrock/
-│   │   ├── routes/
-│   │   └── types/
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   └── styles/
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-├── seed/
-│   └── dump.rdb
-└── scripts/
-    └── reset-demo.sh
+├── semantic_support_desk_arch.png  # Architecture diagram
+├── agents/
+│   ├── support_agent.py            # Main SupportAgent
+│   ├── order_tracking_agent.py     # OrderTrackingAgent with @tool decorators
+│   └── entrypoint.py               # @entrypoint with caching logic
+├── lambda/
+│   ├── ramp_up_simulator/          # Traffic simulation Lambda
+│   └── cache_reset/                # Cache management Lambda
+├── infrastructure/
+│   ├── cloudformation/             # Infrastructure as Code
+│   └── elasticache_config/         # Valkey cluster configuration
+├── templates/
+│   └── requests.json               # Sample request templates for simulation
+├── scripts/
+│   ├── deploy.sh                   # Deployment automation
+│   └── reset-demo.sh               # Demo reset script
+└── tests/
+    └─ unit/                       # Unit tests for agents
 ```
 
 ## 🐛 Troubleshooting
 
-### Valkey connection fails
+### ElastiCache Connection Fails
 
-- Ensure Docker containers are running: `docker-compose ps`
-- Check Valkey health: `valkey-cli ping`
-- Review backend logs: `docker-compose logs backend`
+- Verify VPC security groups allow traffic from Lambda
+- Check ElastiCache cluster status in AWS Console
+- Review Lambda CloudWatch logs for connection errors
 
-### AWS Bedrock errors
+### AgentCore Agent Invocation Errors
 
-- Verify AWS credentials are set
-- Confirm region supports Bedrock (us-east-1 recommended)
-- Check IAM permissions for Bedrock access
+- Confirm Bedrock model access in IAM permissions
+- Verify model IDs match available Bedrock models in region
+- Check Lambda timeout settings (increase if needed for agent chains)
 
-### Frontend can't reach backend
+### Metrics Not Appearing in CloudWatch
 
-- Verify backend is running on port 4000
-- Check CORS configuration
-- Review browser console for errors
+- Ensure CloudWatch PutMetricData permissions in Lambda role
+- Verify custom namespace matches Dashboard configuration
+- Check for rate limiting on CloudWatch API calls
 
-## 📄 License
+### Cache Hit Ratio Lower Than Expected
 
-This project is built for demonstration purposes showcasing Valkey vector database capabilities.
-
-## 🙏 Acknowledgments
-
-- **Valkey** for vector database capabilities
-- **AWS Bedrock** for LLM and embedding services
-- Built for the open-source community
-
----
-
-**Status**: Under active development | See `Progress.md` for current milestone
+- Review similarity threshold (may need adjustment < 0.85)
+- Examine request diversity in simulation templates
+- Verify embeddings are being generated correctly
