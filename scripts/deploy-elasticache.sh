@@ -71,6 +71,109 @@ validate_template() {
     print_error "Template validation failed"
     exit 1
   fi
+
+  print_success "Template is valid"
+  echo ""
+}
+
+check_stack_status() {
+  print_step "3/5" "Checking stack status..."
+
+  local stack_status=$(aws cloudformation describe-stacks \
+    --stack-name $STACK_NAME \
+    --profile $AWS_PROFILE \
+    --region $AWS_REGION \
+    --query 'Stacks[0].StackStatus' \
+    --output text 2>/dev/null || echo "DOES NOT EXIST")
+
+  if [ "$stack_status" == "DOES NOT EXIST" ]; then
+    print_success "Stack does not exist. Will create new stack."
+    echo "create-stack"
+  else
+    print_success "Stack exists with status: $stack_status"
+    echo "Will update existing stack"
+    echo "update-stack"
+  fi
+  echo ""
+}
+
+deploy_stack() {
+  local action=$1
+  print_step "4/5" "Deploying CloudFormation stack..."
+  echo "This will take approximately 10 minutes on first deployment..."
+  echo ""
+
+  if [ "$action" == "create-stack" ]; then
+    create_new_stack
+  else
+    update_existing_stack
+  fi
+
+  print_success "Stack deployment complete"
+  echo ""
+}
+
+create_new_stack() {
+  aws cloudformation create-stack \
+    --stack-name $STACK_NAME \
+    --template-body file://$TEMPLATE_FILE \
+    --profile $AWS_PROFILE \
+    --region $AWS_REGION \
+    --tags Key=Project,Value=valkey-semantic-cache-demo \
+    --capabilities CAPABILITY_IAM >/dev/null
+
+  echo "Waiting for stack creation to complete..."
+  aws cloudformation wait stack-create-complete \
+    --stack-name $STACK_NAME \
+    --profile $AWS_PROFILE \
+    --region $AWS_REGION
+}
+
+update_existing_stack() {
+  if aws cloudformation update-stack \
+    --stack-name $STACK_NAME \
+    --template-body file://$TEMPLATE_FILE \
+    --profile $AWS_PROFILE \
+    --region $AWS_REGION \
+    --capabilities CAPABILITY_IAM >/dev/null 2>&1; then
+
+    echo "Waiting for stack update to complete..."
+    aws cloudformation wait stack-update-complete \
+      --stack-name $STACK_NAME \
+      --profile $AWS_PROFILE \
+      --region $AWS_REGION
+  else
+    echo -e "${YELLOW}No updates to perform (stack is already up-to-date)${NC}"
+  fi
+}
+
+display_outputs() {
+  print_step "5/5" "Stack Outputs:"
+  echo ""
+
+  aws cloudformation describe-stacks \
+    --stack-name $STACK_NAME \
+    --profile $AWS_PROFILE \
+    --region $AWS_REGION \
+    --query 'Stacks[0].Outputs' \
+    --output table
+
+  echo ""
+}
+
+print_next_steps() {
+  print_header "Deployment Complete!"
+
+  echo "To view cluster details:"
+  echo "  aws elasticache describe-cache-cluster \\"
+  echo "    --cache-cluster-id semantic-cache-valkey \\"
+  echo "    --profile $AWS_PROFILE \\"
+  echo "    --region $AWS_REGION \\"
+  echo "    --show-cache-node-info"
+  echo ""
+  echo "To delete the stack when done:"
+  echo "  ./scripts/teardown-elasticache.sh"
+  echo ""
 }
 
 main() {
@@ -83,11 +186,11 @@ main() {
 
   verify_credentials
   validate_template
-  #
-  # local action=$(check_stack_status)
-  # deploy_stack "$action"
-  # display_outputs
-  # print_next_steps
+
+  local action=$(check_stack_status)
+  deploy_stack "$action"
+  display_outputs
+  print_next_steps
 }
 
 main "$@"
