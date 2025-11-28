@@ -178,7 +178,7 @@ Hash:
 ### Task 2: ElastiCache Integration (In Progress)
 
 - [ ] ElastiCache (Valkey) cluster provisioning
-- [ ] Vector index schema creation (HNSW, 1536 dimensions)
+- [x] Vector index schema creation (HNSW, 1536 dimensions)
 - [ ] @entrypoint implementation in AgentCore
 - [ ] Titan Embeddings integration for semantic search
 - [ ] Basic cache hit/miss logic
