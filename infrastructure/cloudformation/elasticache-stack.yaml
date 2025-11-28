@@ -73,7 +73,6 @@ Resources:
   ValkeyCacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
-      CacheClusterId: "semantic-cache-valkey"
       Engine: "valkey"
       EngineVersion: !Ref EngineVersion
       CacheNodeType: !Ref CacheNodeType
@@ -95,6 +94,11 @@ Resources:
           Value: "vector-search-semantic-caching"
 
 Outputs:
+  ClusterId:
+    Description: "Auto-generated ElastiCache cluster ID"
+    Value: !Ref ValkeyCacheCluster
+    Export:
+      Name: !Sub "${AWS::StackName}-ClusterId"
   ClusterEndpoint:
     Description: "Primary endpoint address for ElastiCache cluster"
     Value: !GetAtt ValkeyCacheCluster.RedisEndpoint.Address

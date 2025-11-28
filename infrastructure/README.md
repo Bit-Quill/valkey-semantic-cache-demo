@@ -74,3 +74,37 @@ At the moment, AWS ElastiCache serverless doesn't include vector search module. 
 1. **Delete when idle**: Use `teardown-elasticache.sh`
 2. **Recreate when needed**: Use `deploy-elasticache.sh`
 3. **Potential cost for 10-day demo period**: ~$3.07
+
+## Troubleshooting
+
+### Stack creation or update failure
+
+You may encounter an error similar to the one below during cluster deployment:
+
+```bash
+...
+[4/5] Deploying CloudFormation stack...
+This will take approximately 10 minutes on first deployment...
+
+Waiting for stack creation to complete...
+
+Waiter StackCreateComplete failed: Waiter encountered a terminal failure state: For expression "Stacks[].StackStatus" we matched expected path: "ROLLBACK_COMPLETE" at least once
+```
+
+Consider using `cloudformation`'s `describe-stack-events` sub-command to diagnose
+the exact reason of the failure:
+
+```bash
+# for example
+aws cloudformation describe-stack-events \
+  --stack-name semantic-cache-demo-infrastructure \
+  --profile semantic-cache-demo \
+  --region us-east-2 \
+  --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`].[LogicalResourceId,ResourceStatusReason]' \
+  --output table
+---------------------------------------------------------------------------
+|                           DescribeStackEvents                           |
++---------------------+---------------------------------------------------+
+|  ValkeyCacheCluster |  Encountered unsupported property CacheClusterId  |
++---------------------+---------------------------------------------------+
+```

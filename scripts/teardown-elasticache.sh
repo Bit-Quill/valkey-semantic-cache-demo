@@ -4,7 +4,6 @@ set -e
 STACK_NAME="semantic-cache-demo-infrastructure"
 AWS_PROFILE="semantic-cache-demo"
 DEFAULT_AWS_REGION="us-east-2"
-CACHE_CLUSTER_ID="semantic-cache-valkey"
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -130,18 +129,16 @@ delete_stack() {
 verify_cleanup() {
   print_step "4/4" "Verifying cleanup..."
 
-  local cluster_status=$(aws elasticache describe-cache-clusters \
-    --cache-cluster-id $CACHE_CLUSTER_ID \
+  # get stack count for our $STACK_NAME
+  local stack_exists=$(aws elasticache describe-cache-clusters \
+    --stack-name $STACK_NAME \
     --profile $AWS_PROFILE \
-    --region $AWS_REGION \
-    --query 'CacheClusters[0].CacheClusterStatus' \
-    --output text 2>/dev/null || echo "DELETED")
+    --region $AWS_REGION 2>&1 | grep -c "does not exist" || echo "0")
 
-  if [[ "$cluster_status" == "DELETED" ]]; then
-    print_success "ElastiCache cluster deleted"
+  if [[ "$stack_exists" -gt 0 ]]; then
+    print_success "CloudFormation stack and all resources deleted"
   else
-    print_warning "Cluster still exists with status: $cluster_status"
-    echo "  This may indicate deleteion is still in progress."
+    print_warning "Stack deleteion may still be in progress"
   fi
 
   echo ""

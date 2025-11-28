@@ -65,8 +65,8 @@ validate_template() {
   if
     ! aws cloudformation validate-template \
       --template-body file://$TEMPLATE_FILE \
-      --profile $AWS_PROFILE
-    --region $AWS_REGION >/dev/null 2>&1
+      --profile $AWS_PROFILE \
+      --region $AWS_REGION >/dev/null 2>&1
   then
     print_error "Template validation failed"
     exit 1
@@ -77,7 +77,7 @@ validate_template() {
 }
 
 check_stack_status() {
-  print_step "3/5" "Checking stack status..."
+  print_step "3/5" "Checking stack status..." >&2
 
   local stack_status=$(aws cloudformation describe-stacks \
     --stack-name $STACK_NAME \
@@ -87,14 +87,16 @@ check_stack_status() {
     --output text 2>/dev/null || echo "DOES NOT EXIST")
 
   if [ "$stack_status" == "DOES NOT EXIST" ]; then
-    print_success "Stack does not exist. Will create new stack."
+    # important stand all non-action strings to stderr (>&2) to avoid string concatenation
+    print_success "Stack does not exist. Will create new stack." >&2
+    echo "" >&2
     echo "create-stack"
   else
-    print_success "Stack exists with status: $stack_status"
-    echo "Will update existing stack"
+    print_success "Stack exists with status: $stack_status" >&2
+    echo "Will update existing stack" >&2
+    echo "" >&2
     echo "update-stack"
   fi
-  echo ""
 }
 
 deploy_stack() {
@@ -164,9 +166,16 @@ display_outputs() {
 print_next_steps() {
   print_header "Deployment Complete!"
 
-  echo "To view cluster details:"
+  echo "To get the cluster ID:"
+  echo "  aws cloudformation describe-stacks \\"
+  echo "    --stack-name $STACK_NAME \\"
+  echo "    --profile $AWS_PROFILE \\"
+  echo "    --region $AWS_REGION \\"
+  echo "    --query 'Stacks[0].Outputs[?OutputKey==\`ClusterId\`].OutputValue' \\"
+  echo "    --output text"
+  echo "Use the cluster ID from the output above and use it as follows:"
   echo "  aws elasticache describe-cache-cluster \\"
-  echo "    --cache-cluster-id semantic-cache-valkey \\"
+  echo "    --cache-cluster-id <CLUSTER_ID> \\"
   echo "    --profile $AWS_PROFILE \\"
   echo "    --region $AWS_REGION \\"
   echo "    --show-cache-node-info"
