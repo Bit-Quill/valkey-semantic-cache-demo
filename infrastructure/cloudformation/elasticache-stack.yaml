@@ -69,17 +69,20 @@ Resources:
         - Key: Project
           Value: "valkey-semantic-cache-demo"
 
-  # ElastiCache Cluster (Valkey 8.2 with vector search)
-  ValkeyCacheCluster:
-    Type: AWS::ElastiCache::CacheCluster
+  # ElastiCache Replication Group (Valkey 8.2 with vector search)
+  # Requires ReplicationGroup, not CacheCluster
+  ValkeyReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
     Properties:
+      ReplicationGroupDescription: "Valkey 8.2 cluster for semantic caching demo with vector search"
       Engine: "valkey"
       EngineVersion: !Ref EngineVersion
       CacheNodeType: !Ref CacheNodeType
-      NumCacheNodes: 1
+      NumCacheClusters: 1
+      AutomaticFailoverEnabled: false
       Port: 6379
       CacheSubnetGroupName: !Ref CacheSubnetGroup
-      VpcSecurityGroupIds:
+      SecurityGroupIds:
         - !Ref CacheSecurityGroup
       PreferredMaintenanceWindow: "sun:05:00-sun:06:00"
       AutoMinorVersionUpgrade: true
@@ -94,26 +97,27 @@ Resources:
           Value: "vector-search-semantic-caching"
 
 Outputs:
-  ClusterId:
-    Description: "Auto-generated ElastiCache cluster ID"
-    Value: !Ref ValkeyCacheCluster
+  ReplicationGroupId:
+    Description: "Valkey replication group ID"
+    Value: !Ref ValkeyReplicationGroup
     Export:
-      Name: !Sub "${AWS::StackName}-ClusterId"
+      Name: !Sub "${AWS::StackName}-ReplicationGroupId"
+
   ClusterEndpoint:
-    Description: "Primary endpoint address for ElastiCache cluster"
-    Value: !GetAtt ValkeyCacheCluster.RedisEndpoint.Address
+    Description: "Primary endpoint address for Valkey cluster"
+    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndpoint.Address
     Export:
       Name: !Sub "${AWS::StackName}-ClusterEndpoint"
 
   ClusterPort:
-    Description: "Port number for ElastiCache cluster"
-    Value: !GetAtt ValkeyCacheCluster.RedisEndpoint.Port
+    Description: "Port number for Valkey cluster"
+    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndpoint.Port
     Export:
       Name: !Sub "${AWS::StackName}-ClusterPort"
 
   ClusterConnectionString:
-    Description: "Full connection string for ElastiCache cluster (use from Lambda/VPC)"
-    Value: !Sub "redis://${ValkeyCacheCluster.RedisEndpoint.Address}:${ValkeyCacheCluster.RedisEndpoint.Port}"
+    Description: "Full connection string for Valkey cluster (use from Lambda/VPC)"
+    Value: !Sub "redis://${ValkeyReplicationGroup.PrimaryEndpoint.Address}:${ValkeyReplicationGroup.PrimaryEndpoint.Port}"
     Export:
       Name: !Sub "${AWS::StackName}-ConnectionString"
 
