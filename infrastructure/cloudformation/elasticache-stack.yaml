@@ -105,19 +105,19 @@ Outputs:
 
   ClusterEndpoint:
     Description: "Primary endpoint address for Valkey cluster"
-    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndpoint.Address
+    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndPoint.Address
     Export:
       Name: !Sub "${AWS::StackName}-ClusterEndpoint"
 
   ClusterPort:
     Description: "Port number for Valkey cluster"
-    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndpoint.Port
+    Value: !GetAtt ValkeyReplicationGroup.PrimaryEndPoint.Port
     Export:
       Name: !Sub "${AWS::StackName}-ClusterPort"
 
   ClusterConnectionString:
     Description: "Full connection string for Valkey cluster (use from Lambda/VPC)"
-    Value: !Sub "redis://${ValkeyReplicationGroup.PrimaryEndpoint.Address}:${ValkeyReplicationGroup.PrimaryEndpoint.Port}"
+    Value: !Sub "redis://${ValkeyReplicationGroup.PrimaryEndPoint.Address}:${ValkeyReplicationGroup.PrimaryEndPoint.Port}"
     Export:
       Name: !Sub "${AWS::StackName}-ConnectionString"
 
