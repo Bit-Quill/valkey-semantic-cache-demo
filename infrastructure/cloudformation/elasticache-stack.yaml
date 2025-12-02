@@ -80,6 +80,7 @@ Resources:
       CacheNodeType: !Ref CacheNodeType
       NumCacheClusters: 1
       AutomaticFailoverEnabled: false
+      TransitEncryptionEnabled: false # setting to false for this project
       Port: 6379
       CacheSubnetGroupName: !Ref CacheSubnetGroup
       SecurityGroupIds:
