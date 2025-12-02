@@ -9,18 +9,16 @@
 
 ### Task 1: Foundation ✅
 
-- [ ] AWS account setup confirmed
-- [ ] Bedrock access verification (Sonnet 4.0, Sonnet 3.5, Titan)
-- [ ] IAM role configuration documented
+- [x] AWS account setup confirmed
+- [x] Bedrock access verification (Sonnet 4.0, Sonnet 3.5, Titan)
 - [x] Repository structure established
 - [x] Architecture diagrams created
 - [x] Technical narrative finalized
-- [ ] Collaboration workflow agreed upon
 - [x] README.md and Progress.md created
 
 ### Task 2: ElastiCache Integration 🚧
 
-- [ ] ElastiCache (Valkey) cluster provisioned
+- [x] ElastiCache (Valkey) cluster provisioned
 - [ ] Vector index schema defined and created
 - [ ] @entrypoint stub implementation in AgentCore
 - [ ] Titan Embeddings integration

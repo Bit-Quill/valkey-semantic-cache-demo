@@ -170,14 +170,14 @@ Hash:
 
 ### Task 1: Foundation ✅
 
-- [ ] AWS account setup and Bedrock access verification
-- [ ] IAM role configuration (Lambda, Bedrock, ElastiCache, CloudWatch)
+- [x] AWS account setup and Bedrock access verification
+- [x] IAM role configuration (Lambda, Bedrock, ElastiCache, CloudWatch)
 - [x] Repository structure and collaboration workflow
 - [x] Architecture document and technical narrative
 
 ### Task 2: ElastiCache Integration (In Progress)
 
-- [ ] ElastiCache (Valkey) cluster provisioning
+- [x] ElastiCache (Valkey) cluster provisioning
 - [x] Vector index schema creation (HNSW, 1536 dimensions)
 - [ ] @entrypoint implementation in AgentCore
 - [ ] Titan Embeddings integration for semantic search
@@ -248,7 +248,7 @@ AWS_REGION=us-east-1
 ELASTICACHE_ENDPOINT=your-cluster.cache.amazonaws.com:6379
 BEDROCK_SUPPORT_AGENT_MODEL=anthropic.claude-sonnet-4-20250514
 BEDROCK_TRACKING_AGENT_MODEL=anthropic.claude-sonnet-3-5-v2
-EMBEDDING_MODEL=amazon.titan-embed-text-v1
+EMBEDDING_MODEL=amazon.titan-embed-text-v2:0
 SIMILARITY_THRESHOLD=0.85
 CLOUDWATCH_NAMESPACE=SemanticSupportDesk
 ```
