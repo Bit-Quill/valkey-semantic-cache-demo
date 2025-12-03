@@ -20,12 +20,12 @@ Parameters:
 
   CacheNodeType:
     Type: String
-    Default: "cache.t4g.micro"
+    Default: "cache.t4g.small"
     AllowedValues:
       - cache.t4g.micro
       - cache.t4g.small
       - cache.t4g.medium
-    Description: "ElastiCache node type"
+    Description: "ElastiCache node type (t4g.small or larger required for vector search)"
 
   EngineVersion:
     Type: String
@@ -50,7 +50,7 @@ Resources:
   CacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: "semantic-cache-sg"
+      GroupName: "semantic-cache-sg-v2"
       GroupDescription: "Security group for ElastiCache cluster - allows Redis/Valkey traffic (port 6379) from within VPC"
       VpcId: !Ref VpcId
       SecurityGroupIngress:
