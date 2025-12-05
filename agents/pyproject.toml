@@ -9,4 +9,6 @@ dependencies = [
     "strands-agents>=1.17.0",
     "bedrock-agentcore-starter-toolkit", # for CLI commands, deployment automation, development workflow support
     "valkey-glide-sync>=2.1.1",
+    "mypy-boto3-bedrock-runtime>=1.42.3",
+    "valkey-glide[all]>=2.2.1",
 ]

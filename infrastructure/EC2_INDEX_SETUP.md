@@ -26,7 +26,108 @@ Quick guide to create the vector index using an EC2 instance.
    - Security group: Select existing `sg-077091f3ac5a55b60` OR create new with:
      - Inbound: SSH (22) from your IP
      - Outbound: All traffic
-7. Click **Launch**
+7. **IAM Instance Profile**: Create or select a role with the following permissions (see Step 1.1)
+8. Click **Launch**
+
+### Step 1.1: Configure IAM Instance Role
+
+The EC2 instance needs permissions for AgentCore deployment. Create a role with these inline policies:
+
+**Policy 1: AgentCoreDeploymentPolicy**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:*",
+                "codebuild:*",
+                "bedrock:*",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+**Policy 2: AgentCoreIAMManagement**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:PutRolePolicy",
+                "iam:AttachRolePolicy",
+                "iam:GetRole",
+                "iam:PassRole",
+                "iam:DeleteRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:ListAttachedRolePolicies",
+                "iam:ListRolePolicies"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/AmazonBedrockAgentCore*"
+            ]
+        }
+    ]
+}
+```
+
+**Policy 3: AgentCoreS3Access**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:CreateBucket",
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:DeleteObject",
+                "s3:PutBucketVersioning",
+                "s3:PutBucketPublicAccessBlock",
+                "s3:PutLifecycleConfiguration"
+            ],
+            "Resource": [
+                "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*",
+                "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*/*"
+            ]
+        }
+    ]
+}
+```
+
+**Policy 4: CodeBuildRoleManagement**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:PutRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::*:role/AmazonBedrockAgentCoreSDKCodeBuild-*"
+        }
+    ]
+}
+```
+
+**Or use AWS Managed Policies (simpler):**
+- `AmazonEC2ContainerRegistryFullAccess`
+- `AWSCodeBuildAdminAccess`
+- `AmazonBedrockFullAccess`
+- `IAMFullAccess` (or scoped IAM permissions above)
+- `AmazonS3FullAccess` (or scoped S3 permissions above)
 
 ### Via CLI (Alternative)
 
@@ -67,8 +168,11 @@ sudo dnf update -y
 # Install Python 3.12 and git
 sudo dnf install -y python3.12 python3.12-pip git
 
-# Install valkey-glide
-pip3.12 install valkey-glide-sync
+# Install valkey dependencies (both sync and full client)
+pip3.12 install "valkey-glide-sync>=2.1.1" "valkey-glide[all]>=2.2.1"
+
+# Install additional dependencies for entrypoint testing
+pip3.12 install boto3 mypy-boto3-bedrock-runtime
 ```
 
 ## Step 4: Clone Repository and Run Script
@@ -110,7 +214,34 @@ Vector index setup complete!
 ============================================================
 ```
 
-## Step 5: Verify Index (Optional)
+## Step 5: Fix CodeBuild CloudWatch Logs Permissions
+
+AgentCore creates the CodeBuild service role but doesn't attach CloudWatch Logs permissions. Add them manually:
+
+```bash
+aws iam put-role-policy \
+  --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-2-0d4931938d \
+  --policy-name CloudWatchLogsPolicy \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "Resource": "arn:aws:logs:us-east-2:507286591552:log-group:/aws/codebuild/*"
+      }
+    ]
+  }' \
+  --region us-east-2
+```
+
+**Note**: Replace the role name and account ID if different in your deployment.
+
+## Step 6: Verify Index (Optional)
 
 ```bash
 # Install redis-cli for manual verification
@@ -126,7 +257,7 @@ FT.INFO idx:requests
 exit
 ```
 
-## Step 6: Terminate EC2
+## Step 7: Terminate EC2
 
 Once index is created successfully:
 

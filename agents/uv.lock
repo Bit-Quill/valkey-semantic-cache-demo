@@ -9,7 +9,9 @@ source = { virtual = "." }
 dependencies = [
     { name = "bedrock-agentcore" },
     { name = "bedrock-agentcore-starter-toolkit" },
+    { name = "mypy-boto3-bedrock-runtime" },
     { name = "strands-agents" },
+    { name = "valkey-glide" },
     { name = "valkey-glide-sync" },
 ]
 
@@ -17,7 +19,9 @@ dependencies = [
 requires-dist = [
     { name = "bedrock-agentcore", specifier = ">=1.0.6" },
     { name = "bedrock-agentcore-starter-toolkit" },
+    { name = "mypy-boto3-bedrock-runtime", specifier = ">=1.42.3" },
     { name = "strands-agents", specifier = ">=1.17.0" },
+    { name = "valkey-glide", extras = ["all"], specifier = ">=2.2.1" },
     { name = "valkey-glide-sync", specifier = ">=2.1.1" },
 ]
 
@@ -632,6 +636,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "mypy-boto3-bedrock-runtime"
+version = "1.42.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/95/cb46d84a7a1408e14cac8a8dbbb24a612e438dd10b5f284fb5e01deece3a/mypy_boto3_bedrock_runtime-1.42.3.tar.gz", hash = "sha256:15686cf925719f14bc0d6c85530808736005fb431f007e37d40e10daff4032cc", size = 29476, upload-time = "2025-12-04T20:56:45.423Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/99/19/f8a855cb1ff098afb6d05e2caa681ee34e1a7e4eb51b273ceb1e9c434a4e/mypy_boto3_bedrock_runtime-1.42.3-py3-none-any.whl", hash = "sha256:e28650aaa64ed4ff84ea75aac681c3a0fab0d2c4dd7dc22c00726949dadf87ea", size = 35631, upload-time = "2025-12-04T20:56:43.487Z" },
 ]
 
 [[package]]
@@ -1382,6 +1395,30 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cb/ce/f06b84e2697fef4688ca63bdb2fdf113ca0a3be33f94488f2cadb690b0cf/uvicorn-0.38.0.tar.gz", hash = "sha256:fd97093bdd120a2609fc0d3afe931d4d4ad688b6e75f0f929fde1bc36fe0e91d", size = 80605, upload-time = "2025-10-18T13:46:44.63Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/d9/d88e73ca598f4f6ff671fb5fde8a32925c2e08a637303a1d12883c7305fa/uvicorn-0.38.0-py3-none-any.whl", hash = "sha256:48c0afd214ceb59340075b4a052ea1ee91c16fbc2a9b1469cca0e54566977b02", size = 68109, upload-time = "2025-10-18T13:46:42.958Z" },
+]
+
+[[package]]
+name = "valkey-glide"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ea/08/546285ec298251905e848b762b5e2a87f66b8f0649f3999f4c8b94b41ce4/valkey_glide-2.2.1.tar.gz", hash = "sha256:aff0cf5cc8c9814a680a1bc046fde1d931f9c10df7bea4cd71c9a9c1d525360f", size = 697983, upload-time = "2025-12-03T20:33:59.22Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/b0/49f902a9f65795ea24b143da636f4174507bbfc4c5684449b2f2a9dedfe5/valkey_glide-2.2.1-cp312-cp312-macosx_10_7_x86_64.whl", hash = "sha256:8232d562cdb8a34491928f834f07df2f7f673c6a82af61a1655241558c5ae350", size = 6881375, upload-time = "2025-12-03T20:33:11.722Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/7b/203ff12bc1cf26a3318875de92d6b8a7c6f4648c4b2293f7dda4ed528bc9/valkey_glide-2.2.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:72d9d4e6a1d493a7c235cd8bded542b0d51f1c98e76f09a2cfbf0e970aa1ad7f", size = 6433919, upload-time = "2025-12-03T20:33:13.142Z" },
+    { url = "https://files.pythonhosted.org/packages/01/8b/1633e4d9c5d35565e7dcd7577079bdd53718d02f18a18006e1678b550f4b/valkey_glide-2.2.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0d335f8f9c83ae9d8805930a9c72f64e1ca08c3157db865490a82a570965a459", size = 6555718, upload-time = "2025-12-03T20:33:15.069Z" },
+    { url = "https://files.pythonhosted.org/packages/33/f3/aae55ba6e16cfb6c3576f31f203eb7c3a6121a20c07f78ac06d2058e608c/valkey_glide-2.2.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee67854f87a1ae6250d05af4d9d0fddf66445460b4fd620fb5c97ba79f7468b6", size = 6972833, upload-time = "2025-12-03T20:33:16.409Z" },
+    { url = "https://files.pythonhosted.org/packages/88/06/ed045a6266a60397120bf2c8af6030c7dcea6253952c3354c176f42aea2f/valkey_glide-2.2.1-cp313-cp313-macosx_10_7_x86_64.whl", hash = "sha256:6ed96a65c15fc335025804a2392d9384f22f637543df0eef3e250b5a59b50a3e", size = 6881322, upload-time = "2025-12-03T20:33:20.755Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/f3/4ec1a32cd47718c678330fe9ee6ede79a027a8e110f57e7be0c10d975918/valkey_glide-2.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:1a32ae9021f18039a045db9836caac94aa36cb77ab62fb2f983da64d2e42a7f9", size = 6433956, upload-time = "2025-12-03T20:33:22.498Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/2c/b205ddd835a42c3bd52248d71057bf83760e247c31a06e6f537c7387c4c8/valkey_glide-2.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f2bedeade48d77e5cec823e52f5fcb98637e2479cdce2e420a2fe6b71251dd60", size = 6555637, upload-time = "2025-12-03T20:33:23.921Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/fa/62f475f1ca540320b2eff0b81ebb875a023537f4f3912a7a5430c2fcf899/valkey_glide-2.2.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c3025dad5344cda0d722143a9aba34e2baaf7ed123ef22f4634886bddb4f3923", size = 6973352, upload-time = "2025-12-03T20:33:25.329Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/df/d5709dee5bc158136e7c57a0d9057ff0276fdac7bcf04ae2a1c6eaf559f6/valkey_glide-2.2.1-cp314-cp314-macosx_10_7_x86_64.whl", hash = "sha256:5938e857ef6aa01bf6da52e3d819112d6c6e7504ef3a37aed7277991d7d733f2", size = 6882097, upload-time = "2025-12-03T20:33:27.338Z" },
+    { url = "https://files.pythonhosted.org/packages/54/54/0cad127db543be379a0ed0eae9bf097363d46730b7d0aa6bedfa828aac83/valkey_glide-2.2.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:d663a60a903dbf402dbca57f8dc909bf2fb941b66f8f8cf31ba8042285cef70d", size = 6436312, upload-time = "2025-12-03T20:33:28.767Z" },
+    { url = "https://files.pythonhosted.org/packages/09/02/cdc70a753e11c298640d782b9ae7118c9c696cca4946a22e5ffb881ecf58/valkey_glide-2.2.1-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f8a5ac391b855d6598de5744f88bc8de2195dbb89cff8c47eec4be1166cf3f80", size = 6554824, upload-time = "2025-12-03T20:33:30.455Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/2c/785fc73c2139e76232e26910eda12b5fcb62cb0dae15881a9b9072f56d13/valkey_glide-2.2.1-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cca93b8011bd016e0e5d347521cb1989ddf72024e63bc2e4905e083b12099182", size = 6975441, upload-time = "2025-12-03T20:33:31.834Z" },
 ]
 
 [[package]]
