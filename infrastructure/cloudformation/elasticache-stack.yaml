@@ -69,6 +69,20 @@ Resources:
         - Key: Project
           Value: "valkey-semantic-cache-demo"
 
+  # Parameter Group for ElastiCache (required for vector search on t4g.small)
+  CacheParameterGroup:
+    Type: AWS::ElastiCache::ParameterGroup
+    Properties:
+      CacheParameterGroupFamily: "valkey8"
+      Description: "Custom parameter group for semantic cache demo with 30% memory reserve for vector search"
+      Properties:
+        reserved-memory-percent: "30"
+      Tags:
+        - Key: Name
+          Value: "semantic-cache-demo-params"
+        - Key: Project
+          Value: "valkey-semantic-cache-demo"
+
   # ElastiCache Replication Group (Valkey 8.2 with vector search)
   # Requires ReplicationGroup, not CacheCluster
   ValkeyReplicationGroup:
@@ -78,6 +92,7 @@ Resources:
       Engine: "valkey"
       EngineVersion: !Ref EngineVersion
       CacheNodeType: !Ref CacheNodeType
+      CacheParameterGroupName: !Ref CacheParameterGroup
       NumCacheClusters: 1
       AutomaticFailoverEnabled: false
       TransitEncryptionEnabled: false # setting to false for this project
