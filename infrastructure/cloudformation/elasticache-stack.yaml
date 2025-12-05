@@ -154,5 +154,5 @@ Outputs:
     Value: !Ref AWS::StackName
 
   EstimatedMonthlyCost:
-    Description: "Estimated monthly cost if running 24/7 (cache.t4g.micro)"
-    Value: "$9.34/month ($0.0128/hour * 730 hours)"
+    Description: "Estimated monthly cost if running 24/7 (cache.t4g.small)"
+    Value: "$38/month ($0.052/hour * 730 hours)"

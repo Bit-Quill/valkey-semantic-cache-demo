@@ -56,7 +56,7 @@ The CloudFormation stack creates:
 3. **ElastiCache Cluster (Valkey)**
 
 - **Engine**: Valkey 8.2 with support for VSS
-- **Node Type**: `cache.t4g.micro` (ARM-based Graviton2)
+- **Node Type**: `cache.t4g.small` (ARM-based Graviton2, required for vector search)
 - **Multi-AZ**: Disabled for cost optimization
 
 ## Cost Expectations
@@ -65,15 +65,15 @@ The CloudFormation stack creates:
 
 At the moment, AWS ElastiCache serverless doesn't include vector search module. Hence, going with the node-based approach.
 
-- **Hourly**: $0.0.128/hour
-- **Daily**: ~ $0.31
-- **Monthly**: (if running 24/7): ~ $9.34/month
+- **Hourly**: $0.052/hour
+- **Daily**: ~ $1.25
+- **Monthly**: (if running 24/7): ~ $38/month
 
 ### Cost optimization Strategies
 
 1. **Delete when idle**: Use `teardown-elasticache.sh`
 2. **Recreate when needed**: Use `deploy-elasticache.sh`
-3. **Potential cost for 10-day demo period**: ~$3.07
+3. **Potential cost for 10-day demo period**: ~$12.50
 
 ## Troubleshooting
 
