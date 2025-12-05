@@ -19,7 +19,7 @@
 ### Task 2: ElastiCache Integration 🚧
 
 - [x] ElastiCache (Valkey) cluster provisioned
-- [ ] Vector index schema defined and created
+- [x] Vector index schema defined and created
 - [ ] @entrypoint stub implementation in AgentCore
 - [ ] Titan Embeddings integration
 - [ ] Cache hit/miss logic implementation
