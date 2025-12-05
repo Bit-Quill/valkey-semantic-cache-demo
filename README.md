@@ -131,7 +131,8 @@ aws lambda invoke \
 ### Vector Index (Semantic Search)
 
 ```
-Key: request:vector:{uuid}
+Index Name: idx:requests
+Key Pattern: request:vector:{uuid}
 Fields:
   - request_id (TAG)
   - embedding (VECTOR HNSW, 1536 dimensions)
