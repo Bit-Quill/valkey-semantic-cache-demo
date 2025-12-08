@@ -148,7 +148,7 @@ Resources:
                   - ecr:CreateRepository
                   - ecr:TagResource
                 Resource:
-                  - !Sub AgentECRRepository.ARN
+                  - !GetAtt AgentECRRepository.Arn
         # CodeBuild - for project management (AgentCore may need this)
         - PolicyName: CodeBuildSelfManagement
           PolicyDocument:
