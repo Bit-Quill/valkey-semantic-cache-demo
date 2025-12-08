@@ -34,27 +34,29 @@ Quick guide to create the vector index using an EC2 instance.
 The EC2 instance needs permissions for AgentCore deployment. Create a role with these inline policies:
 
 **Policy 1: AgentCoreDeploymentPolicy**
+
 ```json
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ecr:*",
-                "codebuild:*",
-                "bedrock:*",
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-            ],
-            "Resource": "*"
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:*",
+        "codebuild:*",
+        "bedrock:*",
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
 }
 ```
 
 **Policy 2: AgentCoreIAMManagement**
+
 ```json
 {
     "Version": "2012-10-17",
@@ -72,7 +74,7 @@ The EC2 instance needs permissions for AgentCore deployment. Create a role with 
                 "iam:ListAttachedRolePolicies",
                 "iam:ListRolePolicies"
             ],
-            "Resource": [
+            "Resource":
                 "arn:aws:iam::*:role/AmazonBedrockAgentCore*"
             ]
         }
@@ -81,48 +83,49 @@ The EC2 instance needs permissions for AgentCore deployment. Create a role with 
 ```
 
 **Policy 3: AgentCoreS3Access**
+
 ```json
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:CreateBucket",
-                "s3:PutObject",
-                "s3:GetObject",
-                "s3:ListBucket",
-                "s3:DeleteObject",
-                "s3:PutBucketVersioning",
-                "s3:PutBucketPublicAccessBlock",
-                "s3:PutLifecycleConfiguration"
-            ],
-            "Resource": [
-                "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*",
-                "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*/*"
-            ]
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:DeleteObject",
+        "s3:PutBucketVersioning",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutLifecycleConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*",
+        "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*/*"
+      ]
+    }
+  ]
 }
 ```
 
 **Policy 4: CodeBuildRoleManagement**
+
 ```json
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "iam:PutRolePolicy"
-            ],
-            "Resource": "arn:aws:iam::*:role/AmazonBedrockAgentCoreSDKCodeBuild-*"
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["iam:PutRolePolicy"],
+      "Resource": "arn:aws:iam::*:role/AmazonBedrockAgentCoreSDKCodeBuild-*"
+    }
+  ]
 }
 ```
 
 **Or use AWS Managed Policies (simpler):**
+
 - `AmazonEC2ContainerRegistryFullAccess`
 - `AWSCodeBuildAdminAccess`
 - `AmazonBedrockFullAccess`
@@ -239,6 +242,29 @@ aws iam put-role-policy \
   --region us-east-2
 ```
 
+Similarly AgentCore doesn't attach necessary S3 permissions to download the source code:
+
+```bash
+aws iam put-role-policy \
+  --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-2-0d4931938d \
+  --policy-name S3SourceAccessPolicy \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:GetObject",
+          "s3:GetObjectVersion"
+        ],
+        "Resource": "arn:aws:s3:::bedrock-agentcore-codebuild-sources-507286591552-us-east-2/*"
+      }
+    ]
+  }' \
+  --region us-east-2
+
+```
+
 **Note**: Replace the role name and account ID if different in your deployment.
 
 ## Step 6: Verify Index (Optional)
@@ -281,6 +307,7 @@ Or terminate via AWS Console: EC2 → Instances → Select instance → Instance
 **Error**: Connection timeout or refused
 
 **Solution**:
+
 - Verify EC2 is in same VPC (`vpc-0f9b5afd31283e9d1`)
 - Check security group `sg-077091f3ac5a55b60` allows traffic on port 6379
 - Verify ElastiCache endpoint is correct
@@ -290,6 +317,7 @@ Or terminate via AWS Console: EC2 → Instances → Select instance → Instance
 **Error**: `ModuleNotFoundError: No module named 'glide_sync'`
 
 **Solution**:
+
 ```bash
 # Ensure using python3.12
 which python3.12
@@ -314,6 +342,7 @@ pip3.12 install --upgrade valkey-glide-sync
 ## Next Steps
 
 After index creation:
+
 - ✅ Task 2 complete: ElastiCache Integration
 - → Task 3: SupportAgent Integration
 - → Task 4: CloudWatch Integration
