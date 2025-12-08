@@ -2,7 +2,6 @@
 name = "agents"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "bedrock-agentcore>=1.0.6",
@@ -12,3 +11,6 @@ dependencies = [
     "mypy-boto3-bedrock-runtime>=1.42.3",
     "valkey-glide[all]>=2.2.1",
 ]
+
+[tool.setuptools]
+py-modules = ["entrypoint", "cache_constants"]
