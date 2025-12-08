@@ -15,7 +15,7 @@ from glide_sync import (
     ReturnField,
 )
 from glide_sync.sync_commands import ft
-from cache_constants import INDEX_NAME, KEY_PREFIX_REQUEST_RESPONSE
+from cache_constants import INDEX_NAME, KEY_PREFIX_REQUEST_RESPONSE, KEY_PREFIX_VECTOR
 
 app = BedrockAgentCoreApp()
 
