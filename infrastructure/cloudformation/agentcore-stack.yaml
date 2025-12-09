@@ -336,6 +336,18 @@ Resources:
                   - bedrock-agentcore:*
                 Resource: "*"
 
+        # EC2 - for VPC validation during deployment
+        - PolicyName: EC2VPCValidation
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeVpcs
+                Resource: "*"
+
         # S3 - for uploading source code
         - PolicyName: S3SourceUpload
           PolicyDocument:
@@ -369,9 +381,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - iam:GetRole
-                Resource:
-                  - !GetAtt CodeBuildRole.Arn
-                  - !GetAtt RuntimeRole.Arn
+                Resource: "*"
               - Effect: Allow
                 Action:
                   - iam:CreateServiceLinkedRole
