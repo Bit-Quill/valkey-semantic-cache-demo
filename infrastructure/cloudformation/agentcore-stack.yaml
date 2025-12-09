@@ -185,6 +185,7 @@ Resources:
             Principal:
               Service:
                 - bedrock.amazonaws.com
+                - bedrock-agentcore.amazonaws.com
                 - lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
@@ -243,6 +244,23 @@ Resources:
                   - ec2:AssignPrivateIpAddresses
                   - ec2:UnassignPrivateIpAddresses
                 Resource: "*"
+
+        # ECR - for pulling container images (required by Bedrock AgentCore)
+        - PolicyName: ECRPullPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchCheckLayerAvailability
+                Resource:
+                  - !Sub "arn:aws:ecr:${AwsRegion}:${AWS::AccountId}:repository/bedrock-agentcore-*"
 
       Tags:
         - Key: Name
@@ -308,6 +326,16 @@ Resources:
                   - bedrock:*
                 Resource: "*"
 
+        # Bedrock AgentCore - for runtime management (separate service namespace)
+        - PolicyName: BedrockAgentCoreManagement
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock-agentcore:*
+                Resource: "*"
+
         # S3 - for uploading source code
         - PolicyName: S3SourceUpload
           PolicyDocument:
@@ -344,6 +372,10 @@ Resources:
                 Resource:
                   - !GetAtt CodeBuildRole.Arn
                   - !GetAtt RuntimeRole.Arn
+              - Effect: Allow
+                Action:
+                  - iam:CreateServiceLinkedRole
+                Resource: "*"
 
         # CloudWatch Logs - for viewing build logs
         - PolicyName: CloudWatchLogsRead
