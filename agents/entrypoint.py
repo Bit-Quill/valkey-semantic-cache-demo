@@ -51,7 +51,7 @@ def generate_embedding(text: str) -> list[float]:
     """Generate Titan embeddings for the passed in text parameter."""
     response = bedrock_runtime.invoke_model(
         modelId=EMBEDDING_MODEL,
-        body=json.dumps({"inputText": text, "dimensions": 1536, "normalize": True}),
+        body=json.dumps({"inputText": text, "dimensions": 1536}),
     )
     return json.loads(response["body"].read())["embedding"]
 
