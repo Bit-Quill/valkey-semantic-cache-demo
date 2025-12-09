@@ -38,12 +38,11 @@ def get_cache_client():
     """Get or create the cache client connection."""
     global _cache_client
     if _cache_client is None:
-        _cache_client = GlideClient(
-            GlideClientConfiguration(
-                addresses=[NodeAddress(host=ELASTICACHE_ENDPOINT, port=ELASTICACHE_PORT)],
-                client_name="semantic-cache-entrypoint",
-            )
+        config = GlideClientConfiguration(
+            addresses=[NodeAddress(host=ELASTICACHE_ENDPOINT, port=ELASTICACHE_PORT)],
+            client_name="semantic-cache-entrypoint",
         )
+        _cache_client = GlideClient.create(config)
     return _cache_client
 
 
