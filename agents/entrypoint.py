@@ -162,33 +162,45 @@ def invoke(request):
     Returns:
         str: Response text (cached or from agent)
     """
+    print(f"[ENTRYPOINT] Received request: {request}")
     start_time = time.time()
     request_text = request.get("request_text", "")
+    print(f"[ENTRYPOINT] Processing: {request_text[:100]}...")
 
     embedding = generate_embedding(request_text)
+    print(f"[ENTRYPOINT] Generated {len(embedding)}-dim embedding")
     cache_request_id, similarity = search_cache(embedding)
+    print(f"[ENTRYPOINT] Cache search: request_id={cache_request_id}, similarity={similarity:.4f}")
 
     if cache_request_id and similarity >= SIMILARITY_THRESHOLD:
         cached = get_cached_response(cache_request_id)
         if cached:
             latency = (time.time() - start_time) * 1000
-            print(
-                f"CACHE HIT: similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}"
-            )
-            return {
+            print(f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}")
+            response = {
                 "response": cached["response_text"],
                 "cached": True,
-                "similarity": similarity,
+                "similarity": round(similarity, 4),
+                "latency_ms": round(latency, 1),
             }
+            print(f"[ENTRYPOINT] Returning: {response}")
+            return response
 
-    print(f"CACHE MISS: similarity={similarity:.3f}, forwarding to SupportAgent")
+    print(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
     response_text = "This is a placeholder response for SupportAgent"
 
     cache_response(request_text, response_text, embedding)
     latency = (time.time() - start_time) * 1000
-    print(f"Response cached, total latency={latency:.0f}ms")
+    print(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
 
-    return {"response": response_text, "cached": False}
+    response = {
+        "response": response_text,
+        "cached": False,
+        "similarity": round(similarity, 4),
+        "latency_ms": round(latency, 1),
+    }
+    print(f"[ENTRYPOINT] Returning: {response}")
+    return response
 
 
 if __name__ == "__main__":
