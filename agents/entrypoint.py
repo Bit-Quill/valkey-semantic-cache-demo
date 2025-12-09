@@ -16,7 +16,12 @@ from glide_sync import (
     ReturnField,
 )
 from glide_sync.sync_commands import ft
-from cache_constants import INDEX_NAME, KEY_PREFIX_REQUEST_RESPONSE, KEY_PREFIX_VECTOR, VECTOR_DIM
+from cache_constants import (
+    INDEX_NAME,
+    KEY_PREFIX_REQUEST_RESPONSE,
+    KEY_PREFIX_VECTOR,
+    VECTOR_DIM,
+)
 
 app = BedrockAgentCoreApp()
 
@@ -34,6 +39,7 @@ bedrock_runtime = cast(
 
 # Lazy-load cache client to prevent startup failures if ElastiCache is unreachable
 _cache_client = None
+
 
 def get_cache_client():
     """Get or create the cache client connection."""
@@ -60,7 +66,7 @@ def search_cache(embedding: list[float], k: int = 1) -> tuple[str | None, float]
     """Search vector index for similar cached requests. Returns (request_id, store)."""
 
     # Convert embedding to bytes (float32 binary format)
-    embedding_bytes = struct.pack(f'{len(embedding)}f', *embedding)
+    embedding_bytes = struct.pack(f"{len(embedding)}f", *embedding)
 
     # KNN (K-nearest neighbors) query with vector parameter
     query = f"*=>[KNN {k} @embedding $vec AS score]"
@@ -113,10 +119,10 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
     rr_key = f"{KEY_PREFIX_REQUEST_RESPONSE}{request_id}"
 
     client = get_cache_client()
-    
+
     # Convert embedding to binary format (float32)
-    embedding_bytes = struct.pack(f'{len(embedding)}f', *embedding)
-    
+    embedding_bytes = struct.pack(f"{len(embedding)}f", *embedding)
+
     client.hset(
         vector_key,
         {
@@ -170,18 +176,24 @@ def invoke(request):
     embedding = generate_embedding(request_text)
     print(f"[ENTRYPOINT] Generated {len(embedding)}-dim embedding")
     cache_request_id, similarity = search_cache(embedding)
-    print(f"[ENTRYPOINT] Cache search: request_id={cache_request_id}, similarity={similarity:.4f}")
+    print(
+        f"[ENTRYPOINT] Cache search: request_id={cache_request_id}, similarity={similarity:.4f}"
+    )
 
     if cache_request_id and similarity >= SIMILARITY_THRESHOLD:
         cached = get_cached_response(cache_request_id)
         if cached:
             latency = (time.time() - start_time) * 1000
-            print(f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}")
+            print(
+                f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}"
+            )
             response = {
-                "response": cached["response_text"],
-                "cached": True,
-                "similarity": round(similarity, 4),
-                "latency_ms": round(latency, 1),
+                "response": {
+                    "text": cached["response_text"],
+                    "cached": True,
+                    "similarity": round(similarity, 4),
+                    "latency_ms": round(latency, 1),
+                }
             }
             print(f"[ENTRYPOINT] Returning: {response}")
             return response
@@ -194,10 +206,12 @@ def invoke(request):
     print(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
 
     response = {
-        "response": response_text,
-        "cached": False,
-        "similarity": round(similarity, 4),
-        "latency_ms": round(latency, 1),
+        "response": {
+            "text": response_text,
+            "cached": False,
+            "similarity": round(similarity, 4),
+            "latency_ms": round(latency, 1),
+        }
     }
     print(f"[ENTRYPOINT] Returning: {response}")
     return response
