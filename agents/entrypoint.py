@@ -16,7 +16,7 @@ from glide_sync import (
     ReturnField,
 )
 from glide_sync.sync_commands import ft
-from cache_constants import INDEX_NAME, KEY_PREFIX_REQUEST_RESPONSE, KEY_PREFIX_VECTOR
+from cache_constants import INDEX_NAME, KEY_PREFIX_REQUEST_RESPONSE, KEY_PREFIX_VECTOR, VECTOR_DIM
 
 app = BedrockAgentCoreApp()
 
@@ -51,7 +51,7 @@ def generate_embedding(text: str) -> list[float]:
     """Generate Titan embeddings for the passed in text parameter."""
     response = bedrock_runtime.invoke_model(
         modelId=EMBEDDING_MODEL,
-        body=json.dumps({"inputText": text, "dimensions": 1536}),
+        body=json.dumps({"inputText": text, "dimensions": VECTOR_DIM}),
     )
     return json.loads(response["body"].read())["embedding"]
 

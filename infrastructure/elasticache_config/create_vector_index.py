@@ -17,12 +17,11 @@ import os
 import sys
 from typing import cast
 
+# Add agents directory to path for shared constants
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../agents'))
+
 from glide_sync import GlideClient, GlideClientConfiguration, NodeAddress, TEncodable
-
-
-INDEX_NAME = "idx:requests"
-KEY_PREFIX = "request:vector:"
-VECTOR_DIM = 1536
+from cache_constants import INDEX_NAME, KEY_PREFIX_VECTOR as KEY_PREFIX, VECTOR_DIM
 DISTANCE_METRIC = "COSINE"  # Best for normalized embeddings (semantic similarity)
 
 # HNSW algorithm parameters
