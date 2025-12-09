@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 import json
+import struct
 from typing import cast
 import boto3
 from mypy_boto3_bedrock_runtime import BedrockRuntimeClient
@@ -57,8 +58,8 @@ def generate_embedding(text: str) -> list[float]:
 def search_cache(embedding: list[float], k: int = 1) -> tuple[str | None, float]:
     """Search vector index for similar cached requests. Returns (request_id, store)."""
 
-    # Convert ebedding to bytes for the query parameter
-    embedding_bytes = str(embedding).encode()
+    # Convert embedding to bytes (float32 binary format)
+    embedding_bytes = struct.pack(f'{len(embedding)}f', *embedding)
 
     # KNN (K-nearest neighbors) query with vector parameter
     query = f"*=>[KNN {k} @embedding $vec AS score]"
@@ -112,11 +113,14 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
 
     client = get_cache_client()
     
+    # Convert embedding to binary format (float32)
+    embedding_bytes = struct.pack(f'{len(embedding)}f', *embedding)
+    
     client.hset(
         vector_key,
         {
             "request_id": request_id,
-            "embedding": str(embedding).encode(),
+            "embedding": embedding_bytes,
             "timestamp": str(time.time()),
         },
     )
