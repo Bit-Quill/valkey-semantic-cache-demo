@@ -228,9 +228,9 @@ Resources:
                   - logs:DescribeLogGroups
                   - logs:DescribeLogStreams
                 Resource:
-                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/bedrock/*:*"
-                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/*:*"
-                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/lambda/*:*"
+                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/bedrock/*"
+                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/bedrock-agentcore/*"
+                  - !Sub "arn:aws:logs:${AwsRegion}:${AWS::AccountId}:log-group:/aws/lambda/*"
 
         # VPC - for ElastiCache access (if running in VPC)
         - PolicyName: VPCAccessPolicy
