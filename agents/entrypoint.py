@@ -30,12 +30,21 @@ AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
 bedrock_runtime = cast(
     BedrockRuntimeClient, boto3.client("bedrock-runtime", region_name=AWS_REGION)
 )
-cache_client = GlideClient(
-    GlideClientConfiguration(
-        addresses=[NodeAddress(host=ELASTICACHE_ENDPOINT, port=ELASTICACHE_PORT)],
-        client_name="semantic-cache-entrypoint",
-    )
-)
+
+# Lazy-load cache client to prevent startup failures if ElastiCache is unreachable
+_cache_client = None
+
+def get_cache_client():
+    """Get or create the cache client connection."""
+    global _cache_client
+    if _cache_client is None:
+        _cache_client = GlideClient(
+            GlideClientConfiguration(
+                addresses=[NodeAddress(host=ELASTICACHE_ENDPOINT, port=ELASTICACHE_PORT)],
+                client_name="semantic-cache-entrypoint",
+            )
+        )
+    return _cache_client
 
 
 def generate_embedding(text: str) -> list[float]:
@@ -63,7 +72,7 @@ def search_cache(embedding: list[float], k: int = 1) -> tuple[str | None, float]
         ],
         limit=FtSearchLimit(offset=0, count=1),
     )
-    result = ft.search(cache_client, INDEX_NAME, query, options)
+    result = ft.search(get_cache_client(), INDEX_NAME, query, options)
 
     # since result is [count, {doc_key: {field: value}}]
     if (
@@ -85,7 +94,7 @@ def search_cache(embedding: list[float], k: int = 1) -> tuple[str | None, float]
 def get_cached_response(request_id: str) -> dict | None:
     """Retrieve cached response by request_id"""
     key = f"{KEY_PREFIX_REQUEST_RESPONSE}{request_id}"
-    result = cache_client.hgetall(key)
+    result = get_cache_client().hgetall(key)
     if result:
         return {k.decode(): v.decode() for k, v in result.items()}
     return None
@@ -102,7 +111,9 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
     vector_key = f"{KEY_PREFIX_VECTOR}{request_id}"
     rr_key = f"{KEY_PREFIX_REQUEST_RESPONSE}{request_id}"
 
-    cache_client.hset(
+    client = get_cache_client()
+    
+    client.hset(
         vector_key,
         {
             "request_id": request_id,
@@ -111,7 +122,7 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
         },
     )
 
-    cache_client.hset(
+    client.hset(
         rr_key,
         {
             "request_text": request_text,
