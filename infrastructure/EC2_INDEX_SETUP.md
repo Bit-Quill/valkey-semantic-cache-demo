@@ -31,106 +31,49 @@ Quick guide to create the vector index using an EC2 instance.
 
 ### Step 1.1: Configure IAM Instance Role
 
-The EC2 instance needs permissions for AgentCore deployment. Create a role with these inline policies:
+The EC2 instance needs permissions for AgentCore deployment. Use the CloudFormation stack to create the required roles:
 
-**Policy 1: AgentCoreDeploymentPolicy**
+```bash
+# Deploy the AgentCore IAM roles stack
+aws cloudformation create-stack \
+  --stack-name semantic-cache-demo-agentcore \
+  --template-body file://infrastructure/cloudformation/agentcore-stack.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --region us-east-2 \
+  --profile semantic-cache-demo
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecr:*",
-        "codebuild:*",
-        "bedrock:*",
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
+# Wait for stack creation
+aws cloudformation wait stack-create-complete \
+  --stack-name semantic-cache-demo-agentcore \
+  --region us-east-2 \
+  --profile semantic-cache-demo
 ```
 
-**Policy 2: AgentCoreIAMManagement**
+The CloudFormation stack creates:
+- **EC2DeploymentRole**: Role for the EC2 instance with all necessary permissions
+- **CodeBuildRole**: Role for CodeBuild with CloudWatch Logs and S3 access
+- **RuntimeRole**: Role for the deployed agent runtime
+- **ECR Repository**: Container registry for agent images
+- **S3 Bucket**: Source code storage for CodeBuild
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "iam:CreateRole",
-                "iam:PutRolePolicy",
-                "iam:AttachRolePolicy",
-                "iam:GetRole",
-                "iam:PassRole",
-                "iam:DeleteRolePolicy",
-                "iam:DetachRolePolicy",
-                "iam:ListAttachedRolePolicies",
-                "iam:ListRolePolicies"
-            ],
-            "Resource":
-                "arn:aws:iam::*:role/AmazonBedrockAgentCore*"
-            ]
-        }
-    ]
-}
+After stack creation, attach the instance profile to your EC2 instance:
+
+```bash
+# Get the instance profile name from stack outputs
+INSTANCE_PROFILE=$(aws cloudformation describe-stacks \
+  --stack-name semantic-cache-demo-agentcore \
+  --region us-east-2 \
+  --profile semantic-cache-demo \
+  --query 'Stacks[0].Outputs[?OutputKey==`EC2InstanceProfileName`].OutputValue' \
+  --output text)
+
+# Attach to EC2 instance
+aws ec2 associate-iam-instance-profile \
+  --instance-id <YOUR_INSTANCE_ID> \
+  --iam-instance-profile Name=$INSTANCE_PROFILE \
+  --region us-east-2 \
+  --profile semantic-cache-demo
 ```
-
-**Policy 3: AgentCoreS3Access**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket",
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:ListBucket",
-        "s3:DeleteObject",
-        "s3:PutBucketVersioning",
-        "s3:PutBucketPublicAccessBlock",
-        "s3:PutLifecycleConfiguration"
-      ],
-      "Resource": [
-        "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*",
-        "arn:aws:s3:::bedrock-agentcore-codebuild-sources-*/*"
-      ]
-    }
-  ]
-}
-```
-
-**Policy 4: CodeBuildRoleManagement**
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["iam:PutRolePolicy"],
-      "Resource": "arn:aws:iam::*:role/AmazonBedrockAgentCoreSDKCodeBuild-*"
-    }
-  ]
-}
-```
-
-**Or use AWS Managed Policies (simpler):**
-
-- `AmazonEC2ContainerRegistryFullAccess`
-- `AWSCodeBuildAdminAccess`
-- `AmazonBedrockFullAccess`
-- `IAMFullAccess` (or scoped IAM permissions above)
-- `AmazonS3FullAccess` (or scoped S3 permissions above)
 
 ### Via CLI (Alternative)
 
@@ -217,57 +160,7 @@ Vector index setup complete!
 ============================================================
 ```
 
-## Step 5: Fix CodeBuild CloudWatch Logs Permissions
-
-AgentCore creates the CodeBuild service role but doesn't attach CloudWatch Logs permissions. Add them manually:
-
-```bash
-aws iam put-role-policy \
-  --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-2-0d4931938d \
-  --policy-name CloudWatchLogsPolicy \
-  --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        "Resource": "arn:aws:logs:us-east-2:507286591552:log-group:/aws/codebuild/*"
-      }
-    ]
-  }' \
-  --region us-east-2
-```
-
-Similarly AgentCore doesn't attach necessary S3 permissions to download the source code:
-
-```bash
-aws iam put-role-policy \
-  --role-name AmazonBedrockAgentCoreSDKCodeBuild-us-east-2-0d4931938d \
-  --policy-name S3SourceAccessPolicy \
-  --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "s3:GetObject",
-          "s3:GetObjectVersion"
-        ],
-        "Resource": "arn:aws:s3:::bedrock-agentcore-codebuild-sources-507286591552-us-east-2/*"
-      }
-    ]
-  }' \
-  --region us-east-2
-
-```
-
-**Note**: Replace the role name and account ID if different in your deployment.
-
-## Step 6: Verify Index (Optional)
+## Step 5: Verify Index (Optional)
 
 ```bash
 # Install redis-cli for manual verification
@@ -283,7 +176,7 @@ FT.INFO idx:requests
 exit
 ```
 
-## Step 7: Terminate EC2
+## Step 6: Terminate EC2
 
 Once index is created successfully:
 
