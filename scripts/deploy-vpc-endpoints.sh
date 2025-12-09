@@ -5,7 +5,7 @@
 set -e
 
 STACK_NAME="semantic-cache-vpc-endpoints"
-TEMPLATE_FILE="$(dirname "$0")/../cloudformation/vpc-endpoints-stack.yaml"
+TEMPLATE_FILE="$(dirname "$0")/../infrastructure/cloudformation/vpc-endpoints-stack.yaml"
 AWS_REGION="${AWS_REGION:-us-east-2}"
 AWS_PROFILE="${AWS_PROFILE:-semantic-cache-demo}"
 
