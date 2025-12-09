@@ -176,13 +176,13 @@ Hash:
 - [x] Repository structure and collaboration workflow
 - [x] Architecture document and technical narrative
 
-### Task 2: ElastiCache Integration (In Progress)
+### Task 2: ElastiCache Integration
 
 - [x] ElastiCache (Valkey) cluster provisioning
 - [x] Vector index schema creation (HNSW, 1536 dimensions)
-- [ ] @entrypoint implementation in AgentCore
-- [ ] Titan Embeddings integration for semantic search
-- [ ] Basic cache hit/miss logic
+- [x] @entrypoint implementation in AgentCore
+- [x] Titan Embeddings integration for semantic search
+- [x] Basic cache hit/miss logic
 
 ### Task 3: SupportAgent Integration
 

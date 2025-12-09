@@ -20,10 +20,10 @@
 
 - [x] ElastiCache (Valkey) cluster provisioned
 - [x] Vector index schema defined and created
-- [ ] @entrypoint stub implementation in AgentCore
-- [ ] Titan Embeddings integration
-- [ ] Cache hit/miss logic implementation
-- [ ] Basic end-to-end test (cache query)
+- [x] @entrypoint stub implementation in AgentCore
+- [x] Titan Embeddings integration
+- [x] Cache hit/miss logic implementation
+- [x] Basic end-to-end test (cache query)
 
 ### Task 3: SupportAgent Integration
 
