@@ -27,7 +27,7 @@ support_agent = Agent(
 )
 
 
-def invoke_agent(request_text: str) -> str:
+def invoke_agent(request_text: str) -> tuple[str, int, int]:
     """
     Invoke the SupportAgent with a customer query.
 
@@ -35,10 +35,15 @@ def invoke_agent(request_text: str) -> str:
         request_text: Customer's support request
 
     Returns:
-        Agent's response text
+        Tuple of (response_text, input_tokens, output_tokens)
     """
     response = support_agent(request_text)
-    return str(response)
+    
+    # Extract token usage from response metadata
+    input_tokens = getattr(response, 'input_tokens', 0)
+    output_tokens = getattr(response, 'output_tokens', 0)
+    
+    return str(response), input_tokens, output_tokens
 
 
 if __name__ == "__main__":
@@ -47,4 +52,6 @@ if __name__ == "__main__":
         "My order #12345 has been stuck in 'preparing' for 3 days. What's going on?"
     )
     print(f"Query: {test_query}")
-    print(f"Response: {invoke_agent(test_query)}")
+    response_text, input_tokens, output_tokens = invoke_agent(test_query)
+    print(f"Response: {response_text}")
+    print(f"Tokens: {input_tokens} input, {output_tokens} output")

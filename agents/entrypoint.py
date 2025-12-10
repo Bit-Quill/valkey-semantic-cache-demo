@@ -22,6 +22,8 @@ from cache_constants import (
     KEY_PREFIX_REQUEST_RESPONSE,
     KEY_PREFIX_VECTOR,
     VECTOR_DIM,
+    CLAUDE_SONNET_4_INPUT_COST,
+    CLAUDE_SONNET_4_OUTPUT_COST,
 )
 from support_agent import invoke_agent
 
@@ -43,6 +45,9 @@ bedrock_runtime = cast(
     BedrockRuntimeClient, boto3.client("bedrock-runtime", region_name=AWS_REGION)
 )
 
+cloudwatch = boto3.client("cloudwatch", region_name=AWS_REGION)
+CLOUDWATCH_NAMESPACE = os.environ.get("CLOUDWATCH_NAMESPACE", "SemanticSupportDesk")
+
 # Lazy-load cache client to prevent startup failures if ElastiCache is unreachable
 _cache_client = None
 
@@ -57,6 +62,11 @@ def get_cache_client():
         )
         _cache_client = GlideClient.create(config)
     return _cache_client
+
+
+def estimate_tokens(text: str) -> int:
+    """Estimate token count using ~4 characters per token heuristic."""
+    return len(text) // 4
 
 
 def generate_embedding(text: str) -> list[float]:
@@ -113,12 +123,13 @@ def get_cached_response(request_id: str) -> dict | None:
     return None
 
 
-def cache_response(request_text: str, response_text: str, embedding: list[float]):
+def cache_response(request_text: str, response_text: str, embedding: list[float], 
+                   input_tokens: int = 0, output_tokens: int = 0):
     f"""
-    Store request-response pair with embedding.
+    Store request-response pair with embedding and token usage.
 
     This stores both the embeding in {INDEX_NAME}
-    and the request-response pair.
+    and the request-response pair with cost metadata.
     """
     request_id = str(uuid.uuid4())
     vector_key = f"{KEY_PREFIX_VECTOR}{request_id}"
@@ -137,15 +148,84 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
             "timestamp": str(time.time()),
         },
     )
+    
+    # Calculate cost in dollars
+    cost = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
+            output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
 
     client.hset(
         rr_key,
         {
             "request_text": request_text,
             "response_text": response_text,
+            "tokens_input": str(input_tokens),
+            "tokens_output": str(output_tokens),
+            "cost_dollars": str(cost),
             "created_at": str(time.time()),
         },
     )
+
+
+def emit_metrics(cached: bool, latency_ms: float, similarity: float, 
+                 cost_avoided: float = 0.0, cost_paid: float = 0.0):
+    """
+    Emit custom metrics to CloudWatch for cache performance tracking.
+    
+    Publishes metrics to the SemanticSupportDesk namespace for real-time
+    dashboard visualization. Metrics enable monitoring of cache effectiveness,
+    cost savings, and response latency during traffic spikes.
+    
+    Args:
+        cached: Whether response was served from cache (True) or agent (False)
+        latency_ms: Request processing time in milliseconds
+        similarity: Semantic similarity score (0.0-1.0) from vector search
+        cost_avoided: Estimated Bedrock cost savings in dollars (cache hits only)
+        cost_paid: Actual Bedrock cost incurred in dollars (cache misses only)
+    
+    Metrics emitted:
+        - Latency: Response time with CacheStatus dimension (Hit/Miss)
+        - CacheHit: Binary indicator for hit ratio calculation
+        - SimilarityScore: Vector search match quality
+        - CostSavings: Avoided Bedrock token costs (cache hits only)
+        - CostPaid: Actual Bedrock spend (cache misses only)
+    """
+    metrics = [
+        {
+            "MetricName": "Latency",
+            "Value": latency_ms,
+            "Unit": "Milliseconds",
+            "Dimensions": [{"Name": "CacheStatus", "Value": "Hit" if cached else "Miss"}],
+        },
+        {
+            "MetricName": "CacheHit",
+            "Value": 1.0 if cached else 0.0,
+            "Unit": "Count",
+        },
+        {
+            "MetricName": "SimilarityScore",
+            "Value": similarity,
+            "Unit": "None",
+        },
+    ]
+    
+    if cached and cost_avoided > 0:
+        metrics.append({
+            "MetricName": "CostSavings",
+            "Value": cost_avoided,
+            "Unit": "None",
+        })
+    
+    if not cached and cost_paid > 0:
+        metrics.append({
+            "MetricName": "CostPaid",
+            "Value": cost_paid,
+            "Unit": "None",
+        })
+    
+    try:
+        cloudwatch.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metrics)
+    except Exception as e:
+        logger.warning(f"Failed to emit metrics: {e}")
 
 
 @app.entrypoint
@@ -190,8 +270,18 @@ def invoke(request):
         cached = get_cached_response(cache_request_id)
         if cached:
             latency = (time.time() - start_time) * 1000
+            
+            # Estimate input tokens for current request, use cached output tokens
+            input_tokens = estimate_tokens(request_text)
+            output_tokens = int(cached.get("tokens_output", 0))
+            cost_avoided = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
+                          output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
+            
+            emit_metrics(cached=True, latency_ms=latency, similarity=similarity, cost_avoided=cost_avoided)
+            
             logger.info(
-                f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}"
+                f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, "
+                f"cost_avoided=${cost_avoided:.6f}, request_id={cache_request_id}"
             )
             result = {
                 "response": {
@@ -205,12 +295,19 @@ def invoke(request):
             return result
 
     logger.info(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
-    response_text = invoke_agent(request_text)
+    response_text, input_tokens, output_tokens = invoke_agent(request_text)
     logger.info(f"[SUPPORT AGENT] Response: {response_text[:100]}")
 
-    cache_response(request_text, response_text, embedding)
+    cache_response(request_text, response_text, embedding, input_tokens, output_tokens)
     latency = (time.time() - start_time) * 1000
-    logger.info(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
+    
+    # Calculate actual cost paid for this agent invocation
+    cost_paid = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
+                 output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
+    
+    emit_metrics(cached=False, latency_ms=latency, similarity=similarity, cost_paid=cost_paid)
+    
+    logger.info(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms, cost_paid=${cost_paid:.6f}")
 
     result = {
         "response": {
