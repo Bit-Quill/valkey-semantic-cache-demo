@@ -198,15 +198,16 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
+                  - bedrock:Converse
+                  - bedrock:ConverseStream
                 Resource:
-                  # Claude Sonnet 4.0
-                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/anthropic.claude-sonnet-4-20250514"
-                  # Claude Sonnet 3.5 v2
-                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/anthropic.claude-sonnet-3-5-v2"
+                  # Foundation models (direct invocation)
+                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/anthropic.*"
                   # Titan Embeddings
-                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/amazon.titan-embed-text-v1"
-                  # Wildcard for flexibility during development
-                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/*"
+                  - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/amazon.*"
+                  # Cross-region inference profiles (us. prefix model)
+                  - !Sub "arn:aws:bedrock:${AwsRegion}:${AWS::AccountId}:inference-profile/us.anthropic.*"
+                  - !Sub "arn:aws:bedrock:${AwsRegion}:${AWS::AccountId}:inference-profile/us.amazon.*"
 
         # CloudWatch - for metrics and logging
         - PolicyName: CloudWatchPolicy
