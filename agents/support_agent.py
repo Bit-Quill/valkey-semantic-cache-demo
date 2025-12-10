@@ -23,7 +23,7 @@ Tone: Professional, empathetic, solution-oriented.
 """
 
 support_agent = Agent(
-    model="us.anthropic.claude-sonnet-4-20250514-v1:0", system_prompt=SYSTEM_PROMPT
+    model="anthropic.claude-sonnet-4-20250514-v1:0", system_prompt=SYSTEM_PROMPT
 )
 
 
