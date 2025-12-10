@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import uuid
@@ -24,6 +25,10 @@ from cache_constants import (
 )
 
 app = BedrockAgentCoreApp()
+
+# Configure logging for CloudWatch/OpenTelemetry capture
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 ELASTICACHE_ENDPOINT = os.environ.get("ELASTICACHE_ENDPOINT", "localhost")
 ELASTICACHE_PORT = int(os.environ.get("ELASTICACHE_PORT", "6379"))
@@ -168,15 +173,15 @@ def invoke(request):
     Returns:
         str: Response text (cached or from agent)
     """
-    print(f"[ENTRYPOINT] Received request: {request}")
+    logger.info(f"[ENTRYPOINT] Received request: {request}")
     start_time = time.time()
     request_text = request.get("request_text", "")
-    print(f"[ENTRYPOINT] Processing: {request_text[:100]}...")
+    logger.info(f"[ENTRYPOINT] Processing: {request_text[:100]}...")
 
     embedding = generate_embedding(request_text)
-    print(f"[ENTRYPOINT] Generated {len(embedding)}-dim embedding")
+    logger.info(f"[ENTRYPOINT] Generated {len(embedding)}-dim embedding")
     cache_request_id, similarity = search_cache(embedding)
-    print(
+    logger.info(
         f"[ENTRYPOINT] Cache search: request_id={cache_request_id}, similarity={similarity:.4f}"
     )
 
@@ -184,7 +189,7 @@ def invoke(request):
         cached = get_cached_response(cache_request_id)
         if cached:
             latency = (time.time() - start_time) * 1000
-            print(
+            logger.info(
                 f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}"
             )
             response = {
@@ -195,15 +200,15 @@ def invoke(request):
                     "latency_ms": round(latency, 1),
                 }
             }
-            print(f"[ENTRYPOINT] Returning: {response}")
+            logger.info(f"[ENTRYPOINT] Returning: {response}")
             return response
 
-    print(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
+    logger.info(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
     response_text = "This is a placeholder response for SupportAgent"
 
     cache_response(request_text, response_text, embedding)
     latency = (time.time() - start_time) * 1000
-    print(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
+    logger.info(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
 
     response = {
         "response": {
@@ -213,7 +218,7 @@ def invoke(request):
             "latency_ms": round(latency, 1),
         }
     }
-    print(f"[ENTRYPOINT] Returning: {response}")
+    logger.info(f"[ENTRYPOINT] Returning: {response}")
     return response
 
 
