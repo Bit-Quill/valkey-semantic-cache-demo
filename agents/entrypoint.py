@@ -192,16 +192,16 @@ def invoke(request):
             logger.info(
                 f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, request_id={cache_request_id}"
             )
-            response = {
+            result = {
                 "response": {
-                    "text": cached["response_text"],
+                    "response": cached["response_text"],
                     "cached": True,
                     "similarity": round(similarity, 4),
                     "latency_ms": round(latency, 1),
                 }
             }
-            logger.info(f"[ENTRYPOINT] Returning: {response}")
-            return response
+            logger.info(f"[ENTRYPOINT] Returning: {result}")
+            return result
 
     logger.info(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
     response_text = "This is a placeholder response for SupportAgent"
@@ -210,16 +210,16 @@ def invoke(request):
     latency = (time.time() - start_time) * 1000
     logger.info(f"[ENTRYPOINT] Response cached, total latency={latency:.0f}ms")
 
-    response = {
+    result = {
         "response": {
-            "text": response_text,
+            "response": response_text,
             "cached": False,
             "similarity": round(similarity, 4),
             "latency_ms": round(latency, 1),
         }
     }
-    logger.info(f"[ENTRYPOINT] Returning: {response}")
-    return response
+    logger.info(f"[ENTRYPOINT] Returning: {result}")
+    return result
 
 
 if __name__ == "__main__":
