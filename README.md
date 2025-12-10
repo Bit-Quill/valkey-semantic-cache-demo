@@ -186,10 +186,10 @@ Hash:
 
 ### Task 3: SupportAgent Integration
 
-- [ ] SupportAgent deployment on AgentCore
-- [ ] System prompt design for retail support context
-- [ ] Integration with @entrypoint for cache misses
-- [ ] End-to-end test: cache miss → SupportAgent → cache write
+- [x] SupportAgent deployment on AgentCore
+- [x] System prompt design for retail support context
+- [x] Integration with @entrypoint for cache misses
+- [x] End-to-end test: cache miss → SupportAgent → cache write
 
 ### Task 4: CloudWatch Integration
 
