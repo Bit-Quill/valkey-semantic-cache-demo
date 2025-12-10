@@ -204,9 +204,11 @@ Resources:
                   # Foundation models in local region
                   - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/anthropic.*"
                   - !Sub "arn:aws:bedrock:${AwsRegion}::foundation-model/amazon.*"
-                  # Foundation models in us-east-1 (for cross-region inference profiles)
+                  # Foundation models in all US regions (for cross-region inference profiles)
                   - "arn:aws:bedrock:us-east-1::foundation-model/anthropic.*"
                   - "arn:aws:bedrock:us-east-1::foundation-model/amazon.*"
+                  - "arn:aws:bedrock:us-west-2::foundation-model/anthropic.*"
+                  - "arn:aws:bedrock:us-west-2::foundation-model/amazon.*"
                   # Cross-region inference profiles
                   - !Sub "arn:aws:bedrock:${AwsRegion}:${AWS::AccountId}:inference-profile/us.anthropic.*"
                   - !Sub "arn:aws:bedrock:${AwsRegion}:${AWS::AccountId}:inference-profile/us.amazon.*"
