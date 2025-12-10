@@ -23,6 +23,7 @@ from cache_constants import (
     KEY_PREFIX_VECTOR,
     VECTOR_DIM,
 )
+from support_agent import invoke_agent
 
 app = BedrockAgentCoreApp()
 
@@ -204,7 +205,8 @@ def invoke(request):
             return result
 
     logger.info(f"[CACHE MISS] similarity={similarity:.3f}, forwarding to SupportAgent")
-    response_text = "This is a placeholder response for SupportAgent"
+    response_text = invoke_agent(request_text)
+    logger.info(f"[SUPPORT AGENT] Response: {response_text[:100]}")
 
     cache_response(request_text, response_text, embedding)
     latency = (time.time() - start_time) * 1000

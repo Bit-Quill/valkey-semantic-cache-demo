@@ -12,5 +12,6 @@ dependencies = [
     "valkey-glide[all]>=2.2.1",
 ]
 
+# Necessary for AgentCore Builder
 [tool.setuptools]
-py-modules = ["entrypoint", "cache_constants"]
+py-modules = ["entrypoint", "cache_constants", "support_agent"]
