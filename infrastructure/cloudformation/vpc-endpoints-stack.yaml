@@ -15,8 +15,8 @@ Parameters:
 
   RouteTableIds:
     Type: CommaDelimitedList
+    Default: "rtb-073ce8bdb27b6acaa"
     Description: "Route table IDs for S3 gateway endpoint (comma-separated)"
-    # You'll need to provide this - check your VPC route tables
 
   AgentCoreSecurityGroupId:
     Type: String
@@ -77,6 +77,26 @@ Resources:
       Tags:
         - Key: Name
           Value: "semantic-cache-logs-endpoint"
+        - Key: Project
+          Value: "valkey-semantic-cache-demo"
+
+  #############################################
+  # CloudWatch Monitoring Endpoint (Interface)
+  # For put_metric_data API calls
+  #############################################
+  CloudWatchMonitoringEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      ServiceName: !Sub "com.amazonaws.${AwsRegion}.monitoring"
+      VpcEndpointType: Interface
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+      Tags:
+        - Key: Name
+          Value: "semantic-cache-monitoring-endpoint"
         - Key: Project
           Value: "valkey-semantic-cache-demo"
 
@@ -169,6 +189,12 @@ Outputs:
     Value: !Ref CloudWatchLogsEndpoint
     Export:
       Name: !Sub "${AWS::StackName}-LogsEndpointId"
+
+  CloudWatchMonitoringEndpointId:
+    Description: "CloudWatch Monitoring VPC endpoint ID"
+    Value: !Ref CloudWatchMonitoringEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-MonitoringEndpointId"
 
   BedrockRuntimeEndpointId:
     Description: "Bedrock Runtime VPC endpoint ID"
