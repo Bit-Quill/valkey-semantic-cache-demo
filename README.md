@@ -191,11 +191,12 @@ Hash:
 - [x] Integration with @entrypoint for cache misses
 - [x] End-to-end test: cache miss → SupportAgent → cache write
 
-### Task 4: CloudWatch Integration
+### Task 4: CloudWatch Integration ✅
 
-- [ ] Metrics emission from @entrypoint (latency, cost, hit ratio)
-- [ ] CloudWatch custom metric definitions
-- [ ] Dashboard creation with real-time visualization
+- [x] Metrics emission from @entrypoint (latency, cost, hit ratio)
+- [x] CloudWatch custom metric definitions
+- [x] Dashboard creation with real-time visualization
+- [x] VPC endpoint for CloudWatch Monitoring service
 - [ ] Alerts configuration (optional)
 
 ### Task 5: Multi-Agent Scenario
