@@ -66,9 +66,10 @@ def invoke_agent(request_text: str) -> tuple[str, int, int]:
 
     response = support_agent(request_text)
 
-    # Extract token usage from response metadata
-    input_tokens = getattr(response, "input_tokens", 0)
-    output_tokens = getattr(response, "output_tokens", 0)
+    # Extract token usage from metrics.accumulated_usage
+    usage = response.metrics.accumulated_usage if response.metrics else {}
+    input_tokens = usage.get("inputTokens", 0)
+    output_tokens = usage.get("outputTokens", 0)
 
     # Add accumulated tokens from OrderTrackingAgent
     sub_input, sub_output = get_accumulated_tokens()

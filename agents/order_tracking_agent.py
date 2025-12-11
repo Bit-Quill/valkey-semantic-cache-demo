@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 import time
 import random
+import logging
 from strands import Agent, tool
+
+logger = logging.getLogger(__name__)
 
 # Token accumulator for this agent, within a single request
 _accumulated_tokens = {"input": 0, "output": 0}
@@ -132,8 +135,11 @@ def invoke_tracking_agent(request_text: str) -> tuple[str, int, int]:
     """
     response = order_tracking_agent(request_text)
 
-    input_tokens = getattr(response, "input_tokens", 0)
-    output_tokens = getattr(response, "output_tokens", 0)
+    usage = response.metrics.accumulated_usage if response.metrics else {}
+    input_tokens = usage.get("inputTokens", 0)
+    output_tokens = usage.get("outputTokens", 0)
+
+    logger.info("OrderTrackingAgent extracted tokens - input: %d, output: %d", input_tokens, output_tokens)
 
     return str(response), input_tokens, output_tokens
 

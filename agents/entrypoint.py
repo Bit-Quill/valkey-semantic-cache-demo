@@ -29,9 +29,9 @@ from support_agent import invoke_agent
 
 app = BedrockAgentCoreApp()
 
-# Configure logging for CloudWatch/OpenTelemetry capture
+# Configure root logger to capture all module logs
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 ELASTICACHE_ENDPOINT = os.environ.get("ELASTICACHE_ENDPOINT", "localhost")
 ELASTICACHE_PORT = int(os.environ.get("ELASTICACHE_PORT", "6379"))
