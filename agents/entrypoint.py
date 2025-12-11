@@ -223,9 +223,11 @@ def emit_metrics(cached: bool, latency_ms: float, similarity: float,
         })
     
     try:
+        logger.info(f"[EMIT_METRICS] Sending {len(metrics)} metrics to namespace={CLOUDWATCH_NAMESPACE}")
         cloudwatch.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metrics)
+        logger.info("[EMIT_METRICS] Successfully sent metrics")
     except Exception as e:
-        logger.warning(f"Failed to emit metrics: {e}")
+        logger.error(f"Failed to emit metrics: {e}", exc_info=True)
 
 
 @app.entrypoint
@@ -277,7 +279,10 @@ def invoke(request):
             cost_avoided = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
                           output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
             
-            emit_metrics(cached=True, latency_ms=latency, similarity=similarity, cost_avoided=cost_avoided)
+            try:
+                emit_metrics(cached=True, latency_ms=latency, similarity=similarity, cost_avoided=cost_avoided)
+            except Exception as e:
+                logger.error(f"[EMIT_METRICS ERROR] {e}", exc_info=True)
             
             logger.info(
                 f"[CACHE HIT] similarity={similarity:.3f}, latency={latency:.0f}ms, "
