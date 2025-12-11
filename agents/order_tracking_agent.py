@@ -3,6 +3,18 @@ import time
 import random
 from strands import Agent, tool
 
+# Token accumulator for this agent, within a single request
+_accumulated_tokens = {"input": 0, "output": 0}
+
+
+def reset_token_accumulator():
+    global _accumulated_tokens
+    _accumulated_tokens = {"input": 0, "output": 0}
+
+
+def get_accumulated_tokens() -> tuple[int, int]:
+    return _accumulated_tokens["input"], _accumulated_tokens["output"]
+
 
 @tool
 def check_order_status(order_id: str) -> dict:
@@ -124,3 +136,26 @@ def invoke_tracking_agent(request_text: str) -> tuple[str, int, int]:
     output_tokens = getattr(response, "output_tokens", 0)
 
     return str(response), input_tokens, output_tokens
+
+
+@tool
+def lookup_order_tracking(query: str) -> str:
+    """
+    Delegate order tracking queries to the specialized OrderTrackingAgent.
+
+    Use this tool when the customer:
+    - Asks about order status (e.g. "Where is my order #12345")
+    - Provides a tracking number and wants delivery updates
+    - Inquires about shipping delays or delivery estimates
+
+    Args:
+        query: The customer's order or delivery tracking question
+
+    Returns:
+        Response from the OrderTrackingAgent with order/delivery details
+    """
+    global _accumulated_tokens
+    response_text, input_tokens, output_tokens = invoke_tracking_agent(query)
+    _accumulated_tokens["input"] += input_tokens
+    _accumulated_tokens["output"] += output_tokens
+    return response_text
