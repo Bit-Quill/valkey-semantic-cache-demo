@@ -1,0 +1,184 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/awslabs/goformation/master/schema/cloudformation.schema.json
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudWatch Dashboard for Semantic Cache Demo metrics visualization"
+
+Parameters:
+  DashboardName:
+    Type: String
+    Default: "semantic-cache-demo"
+    Description: "Name of the CloudWatch Dashboard"
+
+  MetricNamespace:
+    Type: String
+    Default: "SemanticSupportDesk"
+    Description: "CloudWatch custom metrics namespace"
+
+Resources:
+  SemanticCacheDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref DashboardName
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "Latency", "CacheStatus", "Hit", {"stat": "Average", "label": "Avg Latency (Hit)"}],
+                  ["${MetricNamespace}", "Latency", "CacheStatus", "Miss", {"stat": "Average", "label": "Avg Latency (Miss)"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Latency: Cache Hit vs Miss",
+                "period": 60,
+                "yAxis": {
+                  "left": {
+                    "label": "Milliseconds"
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "CacheHit", {"stat": "Sum", "label": "Cache Hits", "id": "m1"}],
+                  ["...", {"stat": "SampleCount", "label": "Total Requests", "id": "total", "visible": false}],
+                  [{"expression": "m1/total*100", "label": "Cache Hit Ratio (%)", "id": "ratio"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Cache Hit Ratio",
+                "period": 60,
+                "yAxis": {
+                  "left": {
+                    "label": "Percentage",
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "CostSavings", {"stat": "Sum", "label": "Cumulative Savings"}],
+                  [".", "CostPaid", {"stat": "Sum", "label": "Cumulative Spend"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Cost: Savings vs Spend",
+                "period": 60,
+                "yAxis": {
+                  "left": {
+                    "label": "Dollars ($)"
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "SimilarityScore", {"stat": "Average", "label": "Avg Similarity"}],
+                  ["...", {"stat": "Minimum", "label": "Min Similarity"}],
+                  ["...", {"stat": "Maximum", "label": "Max Similarity"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Similarity Score Distribution",
+                "period": 60,
+                "yAxis": {
+                  "left": {
+                    "label": "Score (0.0-1.0)",
+                    "min": 0,
+                    "max": 1
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "CacheHit", {"stat": "Sum"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Total Cache Hits",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "CostSavings", {"stat": "Sum"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Total Cost Savings ($)",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["${MetricNamespace}", "Latency", "CacheStatus", "Hit", {"stat": "Average"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Avg Cache Hit Latency (ms)",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+Outputs:
+  DashboardURL:
+    Description: "URL to view the CloudWatch Dashboard"
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DashboardName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-DashboardURL"
+
+  DashboardName:
+    Description: "Name of the created dashboard"
+    Value: !Ref DashboardName
+    Export:
+      Name: !Sub "${AWS::StackName}-DashboardName"
