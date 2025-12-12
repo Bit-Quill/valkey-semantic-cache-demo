@@ -14,4 +14,4 @@ dependencies = [
 
 # Necessary for AgentCore Builder
 [tool.setuptools]
-py-modules = ["entrypoint", "cache_constants", "support_agent", "order_tracking_agent"]
+py-modules = ["metrics_publisher", "entrypoint", "cache_constants", "support_agent", "order_tracking_agent"]
