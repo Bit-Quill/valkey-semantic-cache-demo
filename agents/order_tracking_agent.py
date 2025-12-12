@@ -117,7 +117,7 @@ Demo context:
 """
 
 order_tracking_agent = Agent(
-    model="anthropic.claude-3-5-haiku-20241022-v1:0",
+    model="us.anthropic.claude-3-5-haiku-20241022-v1:0",
     system_prompt=SYSTEM_PROMPT,
     tools=[check_order_status, get_delivery_info],
 )
