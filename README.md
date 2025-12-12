@@ -115,9 +115,9 @@ aws lambda invoke \
 
 ### AI Components
 
-- **Claude Sonnet 4.0**: Primary SupportAgent for complex query analysis
-- **Claude Sonnet 3.5**: OrderTrackingAgent for lightweight tool invocations
-- **Titan Embeddings**: Generate 1536-dimensional vectors for semantic search
+- **Claude Sonnet 4**: Primary SupportAgent for complex query analysis
+- **Claude 3.5 Haiku**: OrderTrackingAgent for fast tool invocations
+- **Titan Embeddings**: Generate 1024-dimensional vectors for semantic search
 - **Strands Framework**: Agent orchestration, @entrypoint and @tool decorators
 
 ### Development
@@ -169,7 +169,7 @@ Hash:
 
 ## 🗺️ Project Timeline
 
-### Task 1: Foundation ✅
+### Task 1: Foundation
 
 - [x] AWS account setup and Bedrock access verification
 - [x] IAM role configuration (Lambda, Bedrock, ElastiCache, CloudWatch)
@@ -179,7 +179,7 @@ Hash:
 ### Task 2: ElastiCache Integration
 
 - [x] ElastiCache (Valkey) cluster provisioning
-- [x] Vector index schema creation (HNSW, 1536 dimensions)
+- [x] Vector index schema creation (HNSW, 1024 dimensions)
 - [x] @entrypoint implementation in AgentCore
 - [x] Titan Embeddings integration for semantic search
 - [x] Basic cache hit/miss logic
@@ -191,7 +191,7 @@ Hash:
 - [x] Integration with @entrypoint for cache misses
 - [x] End-to-end test: cache miss → SupportAgent → cache write
 
-### Task 4: CloudWatch Integration ✅
+### Task 4: CloudWatch Integration
 
 - [x] Metrics emission from @entrypoint (latency, cost, hit ratio)
 - [x] CloudWatch custom metric definitions
@@ -201,15 +201,17 @@ Hash:
 
 ### Task 5: Multi-Agent Scenario
 
-- [ ] OrderTrackingAgent deployment (Sonnet 3.5)
-- [ ] @tool decorator implementation for order status checks
-- [ ] Agent orchestration: SupportAgent → OrderTrackingAgent
-- [ ] Tool invocation testing and validation
+- [x] OrderTrackingAgent deployment (Claude 3.5 Haiku)
+- [x] @tool decorator implementation for order status checks
+- [x] Agent orchestration: SupportAgent → OrderTrackingAgent
+- [x] Tool invocation testing and validation
+- [x] Token accumulation from sub-agent calls
 
 ### Task 6: Integration & Testing
 
-- [ ] End-to-end flow validation
-- [ ] Error handling (network failures, tool errors, agent timeouts)
+- [x] End-to-end flow validation
+- [x] Error handling (rate limits, model availability)
+- [x] Local and AWS deployment testing
 - [ ] Performance optimization
 - [ ] Seed data creation (sample requests)
 

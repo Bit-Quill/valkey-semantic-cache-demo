@@ -1,43 +1,43 @@
 # Retail Support Desk - Semantic Caching Demo - Progress Tracker
 
-**Last Updated**: 2025-12-11  
-**Current Phase**: Task 5 - Multi-Agent Scenario
+**Last Updated**: 2025-12-12  
+**Current Phase**: Task 6 - Integration & Testing
 
 ---
 
 ## 📋 Overall Progress
 
-### Task 1: Foundation ✅
+### Task 1: Foundation
 
 - [x] AWS account setup confirmed
-- [x] Bedrock access verification (Sonnet 4.0, Sonnet 3.5, Titan)
+- [x] Bedrock access verification (Sonnet 4, Haiku 3.5, Titan)
 - [x] Repository structure established
 - [x] Architecture diagrams created
 - [x] Technical narrative finalized
 - [x] README.md and Progress.md created
 
-### Task 2: ElastiCache Integration ✅
+### Task 2: ElastiCache Integration
 
 - [x] ElastiCache (Valkey) cluster provisioned
-- [x] Vector index schema defined and created
-- [x] @entrypoint stub implementation in AgentCore
+- [x] Vector index schema defined and created (HNSW, 1024 dimensions)
+- [x] @entrypoint implementation in AgentCore
 - [x] Titan Embeddings integration
 - [x] Cache hit/miss logic implementation
 - [x] Basic end-to-end test (cache query)
 
-### Task 3: SupportAgent Integration ✅
+### Task 3: SupportAgent Integration
 
-- [x] SupportAgent code scaffold
+- [x] SupportAgent code implementation
 - [x] System prompt design for retail support desk
 - [x] Integration with @entrypoint
 - [x] Cache write logic on agent response
 - [x] End-to-end test: request → cache miss → SupportAgent → cache write
-- [x] Performance validation: 94s uncached → 213ms cached (0.8877 similarity)
+- [x] Performance validation: ~6s uncached → <200ms cached (high similarity)
 
-### Task 4: CloudWatch Integration ✅
+### Task 4: CloudWatch Integration
 
 - [x] Metrics emission code in @entrypoint
-- [x] CloudWatch custom metrics defined (Latency, CacheHit, SimilarityScore, CostSavings)
+- [x] CloudWatch custom metrics defined (Latency, CacheHit, SimilarityScore, CostSavings, CostPaid)
 - [x] Dashboard JSON configuration
 - [x] Dashboard deployed in AWS Console
 - [x] VPC endpoint for CloudWatch Monitoring added
@@ -46,17 +46,21 @@
 
 ### Task 5: Multi-Agent Scenario
 
-- [ ] OrderTrackingAgent implementation
-- [ ] @tool decorators for order status and delivery checks
-- [ ] Agent orchestration logic (SupportAgent → OrderTrackingAgent)
-- [ ] Tool invocation testing
-- [ ] Multi-agent flow validation
+- [x] OrderTrackingAgent implementation (Claude 3.5 Haiku)
+- [x] @tool decorators for order status and delivery checks
+- [x] Agent orchestration logic (SupportAgent → OrderTrackingAgent)
+- [x] Tool invocation testing and validation
+- [x] Token accumulation from sub-agent calls
+- [x] Multi-agent flow validation (local and AWS)
+- [x] Model selection optimization (Haiku to avoid rate limits)
 
 ### Task 6: Integration & Testing
 
-- [ ] End-to-end flow testing
-- [ ] Error handling (network, tool errors, agent timeouts)
-- [ ] Performance profiling and optimization
+- [x] End-to-end flow testing (local and AWS deployment)
+- [x] Error handling (rate limits, model availability, timeouts)
+- [x] Local and AWS deployment testing
+- [x] Token extraction from Strands AgentResult metrics
+- [ ] Performance optimization (tool invocation latency)
 - [ ] Seed data creation (request templates)
 - [ ] Load testing (simulated spike scenarios)
 
@@ -68,6 +72,17 @@
 - [ ] CacheResetLambda implementation
 - [ ] Demo script finalization
 - [ ] Conference presentation rehearsal
+
+---
+
+## 🎉 Recent Accomplishments (2025-12-12)
+
+- **Multi-Agent Orchestration**: Successfully implemented SupportAgent → OrderTrackingAgent delegation via `lookup_order_tracking` tool
+- **Token Tracking**: Fixed token extraction from Strands `AgentResult.metrics.accumulated_usage` for accurate cost calculation
+- **Model Optimization**: Switched OrderTrackingAgent from Claude 3.5 Sonnet v2 (LEGACY) to Claude 3.5 Haiku (ACTIVE) to avoid rate limits
+- **Deployment Success**: Completed AWS deployment with functional semantic caching and multi-agent flows
+- **Error Handling**: Implemented graceful fallbacks when OrderTrackingAgent tools timeout
+- **Logging**: Configured root logger to capture all module logs for debugging and observability
 
 ## 💡 Ideas for Future Consideration
 
