@@ -145,7 +145,7 @@ func initSessionIdDs() {
 
 func invokeAgentCore(ctx context.Context, question string) error {
 	payload := map[string]string{
-		"prompt": question,
+		"request_text": question,
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
