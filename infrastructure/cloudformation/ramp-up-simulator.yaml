@@ -53,13 +53,14 @@ Resources:
                 - s3:GetObject
               Resource: !Sub "arn:aws:s3:::${SeedQuestionsBucket}/${SeedQuestionsKey}"
             
-            # CloudWatch Logs (automatically added by SAM, but explicit for clarity)
+            # CloudWatch Logs
             - Effect: Allow
               Action:
                 - logs:CreateLogGroup
                 - logs:CreateLogStream
                 - logs:PutLogEvents
-              Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-ramp-up-simulator:*"
+              Resource:
+                - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-ramp-up-simulator:*"
 
 Outputs:
   RampUpSimulatorFunctionArn:
