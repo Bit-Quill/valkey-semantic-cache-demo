@@ -76,10 +76,15 @@ This application provides developers and AWS customers with a concrete, measurab
 3. **Trigger simulation via Web Console or CLI**
 
 ```bash
+   # Via AWS Lambda Console
+   # Navigate to semantic-cache-demo-ramp-up-simulator function
+   # Click Test tab, use empty payload: {}
+   
    # Via AWS CLI
    aws lambda invoke \
-     --function-name RampUpSimulator \
-     --payload '{"cache_enabled": true}' \
+     --function-name semantic-cache-demo-ramp-up-simulator \
+     --region us-east-2 \
+     --payload '{}' \
      response.json
 ```
 
@@ -217,29 +222,32 @@ Hash:
 
 ### Task 7: Simulation & Presentation Layer
 
-- [ ] Ramp-up Lambda implementation (1 → 100 requests/second)
-- [ ] API Gateway configuration
-- [ ] Client interface (Web Console or CLI)
-- [ ] Cache reset Lambda
+- [x] Ramp-up Lambda implementation (1 → 50 requests/second over 60s)
+- [x] Go-based Lambda with deterministic question selection
+- [x] S3-based seed questions (50 base scenarios + 450 variations)
+- [x] SAM template with IAM policies for deployment
+- [x] Rate limiting and session pooling for AgentCore stability
+- [x] CloudWatch Logs integration for monitoring
+- [ ] API Gateway configuration (optional - direct Lambda invocation works)
+- [ ] Cache reset Lambda (optional - manual flush via redis-cli)
 - [ ] Demo script and walkthrough
 
 ## 🎪 Conference Demo Flow
 
-1. **Fresh Start**: Invoke CacheResetLambda, show CloudWatch Dashboard (all metrics at zero)
-2. **First Request**: "My order stays in preparing for three days"
-   - Cache miss → Full agent chain (SupportAgent → OrderTrackingAgent)
-   - Dashboard shows: ~2.5s latency, ~$0.003 cost
-3. **Ramp-up Simulation**: Trigger Lambda with 30-second ramp (1 → 100 req/s)
-   - Subsequent similar requests ("I bought a present but you haven't shipped it yet!")
-   - Dashboard shows: Rising cache hit ratio, dropping average latency
-4. **Steady State**: After 50+ requests
-   - Cache hit ratio: 85-90%
-   - Average latency: <150ms
-   - Cost savings: ~$0.10 accumulated
-5. **Semantic Match Demonstration**: "Tracking number reads labelled for shipper, no change after 5 days"
-   - Cache hit with 0.88 similarity score
-   - Response time: <100ms
-6. **Reset**: Clear cache to demonstrate again if needed
+1. **Fresh Start**: Show CloudWatch Dashboard (all metrics at zero)
+2. **Ramp-up Simulation**: Invoke Lambda via AWS Console or CLI
+   - Linear ramp: 1 → 50 req/s over 60 seconds (~1,500 total requests)
+   - First 30s: Base questions prime the cache (45% hit rate initially)
+   - Second 30s: Variations hit cache (90% hit rate)
+3. **Live Metrics**: CloudWatch Dashboard shows real-time results
+   - Cache hit ratio: 45% → 90% in 1 minute
+   - Average cache hit latency: ~90ms (vs. 2-3s for full agent chain)
+   - Cost savings: ~$2.33 per 30 minutes of traffic
+   - Total cache hits: 600+ requests served from cache
+4. **Key Takeaway**: Semantic caching enables handling traffic surges (Black Friday) with:
+   - 20-30x latency reduction
+   - Significant cost savings by avoiding redundant LLM calls
+   - 90% cache efficiency for similar customer queries
 
 ## 📝 Configuration
 
