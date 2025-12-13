@@ -34,7 +34,7 @@ type Scenario struct {
 type LambdaRequest struct {
 	RampDurationSecs int  `json:"ramp_duration_secs,omitempty"` // default 60
 	RampStartRPS     int  `json:"ramp_start_rps,omitempty"`     // default 1
-	RampEndRPS       int  `json:"ramp_end_rps,omitempty"`       // default 100
+	RampEndRPS       int  `json:"ramp_end_rps,omitempty"`       // default 50
 	DryRun           bool `json:"dry_run,omitempty"`            // skip actual invocations
 }
 
@@ -65,7 +65,7 @@ var (
 	loadMu          sync.Mutex
 )
 
-const numSessions = 20
+const numSessions = 25 // Balance between collision avoidance and metrics batching efficiency
 const maxConcurrentRequests = 50 // Limit concurrent API calls to avoid throttling
 
 func loadConfig() {
@@ -178,7 +178,7 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 		req.RampStartRPS = 1
 	}
 	if req.RampEndRPS == 0 {
-		req.RampEndRPS = 100
+		req.RampEndRPS = 50
 	}
 
 	// Load questions from S3
