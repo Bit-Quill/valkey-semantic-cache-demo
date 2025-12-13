@@ -137,7 +137,7 @@ func loadQuestionsFromS3(ctx context.Context) error {
 
 func initSessionIdDs() {
 	sessionIDs = make([]string, numSessions)
-	for i := 0; i < numSessions; i++ {
+	for i := range numSessions {
 		sessionIDs[i] = fmt.Sprintf("ramp-sim-%d-%d", time.Now().UnixNano(), i)
 	}
 	log.Printf("initialized %d session IDs", len(sessionIDs))
@@ -223,7 +223,7 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 
 		// Launch goroutines for this second's requests
 		var wg sync.WaitGroup
-		for i := 0; i < currentRPS; i++ {
+		for i := range currentRPS {
 			wg.Add(1)
 			requestIndex := int(totalReqs) + i
 			go func(idx int) {
