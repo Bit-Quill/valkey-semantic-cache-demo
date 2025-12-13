@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockagentcore"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -166,7 +167,100 @@ func invokeAgentCore(ctx context.Context, question string) error {
 	return nil
 }
 
+func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, error) {
+	// Set defaults
+	if req.RampDurationSecs == 0 {
+		req.RampDurationSecs = 60
+	}
+	if req.RampStartRPS == 0 {
+		req.RampStartRPS = 1
+	}
+	if req.RampEndRPS == 0 {
+		req.RampEndRPS = 100
+	}
+
+	// Load questions from S3
+	if err := loadQuestionsFromS3(ctx); err != nil {
+		return LambdaResponse{}, fmt.Errorf("failed to load questions from S3 s3://%s/%s: %w",
+			cfg.SeedQuestionsBucket, cfg.SeedQuestionsKey, err)
+	}
+
+	initSessionIdDs()
+
+	// Execute ramp-up
+	start := time.Now()
+	totalReqs, successes, failures := executeRampUp(ctx, req)
+	duration := time.Since(start).Seconds()
+
+	return LambdaResponse{
+		TotalRequests: totalReqs,
+		Successes:     successes,
+		Failures:      failures,
+		DurationSecs:  duration,
+		AvgRPS:        float64(totalReqs) / duration,
+		Message:       fmt.Sprintf("Ramp-up complete: %d/%d successful", successes, totalReqs),
+	}, nil
+}
+
+func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64) {
+	var totalReqs, successes, failures int64
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	elapsed := 0
+	for range ticker.C {
+		if elapsed >= req.RampDurationSecs {
+			break
+		}
+
+		// Linear ramp: RPS = start + (end - start) * (elapsed / duration)
+		progress := float64(elapsed) / float64(req.RampDurationSecs)
+		currentRPS := req.RampStartRPS + int(float64(req.RampEndRPS-req.RampStartRPS)*progress)
+
+		log.Printf("[%ds] Target RPS: %d | Total: %d | Success: %d | Failures: %d",
+			elapsed, currentRPS, totalReqs, successes, failures)
+
+		// Launch goroutines for this second's requests
+		var wg sync.WaitGroup
+		for i := 0; i < currentRPS; i++ {
+			wg.Add(1)
+			requestIndex := int(totalReqs) + i
+			go func(idx int) {
+				defer wg.Done()
+
+				question := selectQuestion(elapsed, req.RampDurationSecs, idx)
+				err := invokeAgentCore(ctx, question)
+
+				loadMu.Lock()
+				totalReqs++
+				if err != nil {
+					failures++
+					log.Printf("Request failed: %v", err)
+				} else {
+					successes++
+				}
+				loadMu.Unlock()
+			}(requestIndex)
+		}
+		wg.Wait()
+		elapsed++
+	}
+
+	log.Printf("Ramp-up complete: %d total, %d success, %d failures", totalReqs, successes, failures)
+	return totalReqs, successes, failures
+}
+
+func selectQuestion(elapsedSecs, totalDuration, requestIndex int) string {
+	// First half (30s): deterministically cycle through ALL base questions
+	// This guarantees every base question primes the cache exactly once
+	if elapsedSecs < totalDuration/2 {
+		return baseQuestions[requestIndex%len(baseQuestions)]
+	}
+	// Second half: cycle through variations (should hit cache)
+	return variations[requestIndex%len(variations)]
+}
+
 func main() {
-	_ = s3Client
-	_ = agentCoreClient
+	lambda.Start(handleRequest)
 }
