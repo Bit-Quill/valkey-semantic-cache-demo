@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockagentcore"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/uuid"
 )
 
 type SeedQuestions struct {
@@ -65,6 +66,7 @@ var (
 )
 
 const numSessions = 20
+const maxConcurrentRequests = 50 // Limit concurrent API calls to avoid throttling
 
 func loadConfig() {
 	cfg = Config{
@@ -138,7 +140,7 @@ func loadQuestionsFromS3(ctx context.Context) error {
 func initSessionIdDs() {
 	sessionIDs = make([]string, numSessions)
 	for i := range numSessions {
-		sessionIDs[i] = fmt.Sprintf("ramp-sim-%d-%d", time.Now().UnixNano(), i)
+		sessionIDs[i] = uuid.New().String() // 36 characters (meets ≥33 requirement)
 	}
 	log.Printf("initialized %d session IDs", len(sessionIDs))
 }
@@ -204,6 +206,11 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 
 func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64) {
 	var totalReqs, successes, failures int64
+	
+	// Semaphore to limit concurrent requests and avoid AWS API throttling
+	// Bedrock AgentCore has default TPS limits that can be exceeded with 100 concurrent requests
+	// Reference: "failed to get rate limit token, retry quota exceeded"
+	sem := make(chan struct{}, maxConcurrentRequests)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -228,6 +235,10 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 			requestIndex := int(totalReqs) + i
 			go func(idx int) {
 				defer wg.Done()
+				
+				// Acquire semaphore slot
+				sem <- struct{}{}
+				defer func() { <-sem }()
 
 				question := selectQuestion(elapsed, req.RampDurationSecs, idx)
 				err := invokeAgentCore(ctx, question)
