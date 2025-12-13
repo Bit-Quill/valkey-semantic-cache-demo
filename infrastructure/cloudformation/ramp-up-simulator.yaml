@@ -45,7 +45,9 @@ Resources:
             - Effect: Allow
               Action:
                 - bedrock-agentcore:InvokeAgentRuntime
-              Resource: !Ref AgentCoreRuntimeARN
+              Resource: 
+                - !Ref AgentCoreRuntimeARN
+                - !Sub "${AgentCoreRuntimeARN}/*"
             
             # S3 read access for seed questions
             - Effect: Allow
