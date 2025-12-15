@@ -59,10 +59,12 @@ var (
 	agentCoreClient *bedrockagentcore.Client
 	baseQuestions   []string // 50 base questions (cache primers)
 	variations      []string // 450 variations
+	sessionIDs      []string // Pre-generated session IDs to stay under 500 concurrent limit
 	questionsLoaded bool
 	loadMu          sync.Mutex
 )
 
+const numSessions = 400          // Stay under 500 concurrent session limit (sessions idle for 15 min)
 const maxConcurrentRequests = 15 // Limit concurrent API calls to avoid AgentCore throttling
 
 func loadConfig() {
@@ -134,7 +136,15 @@ func loadQuestionsFromS3(ctx context.Context) error {
 	return nil
 }
 
-func invokeAgentCore(ctx context.Context, question string) error {
+func initSessionIDs() {
+	sessionIDs = make([]string, numSessions)
+	for i := range numSessions {
+		sessionIDs[i] = uuid.New().String()
+	}
+	log.Printf("Initialized %d session IDs", len(sessionIDs))
+}
+
+func invokeAgentCore(ctx context.Context, question string, requestIndex int) error {
 	payload := map[string]string{
 		"request_text": question,
 	}
@@ -143,7 +153,8 @@ func invokeAgentCore(ctx context.Context, question string) error {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	sessionID := uuid.New().String()
+	// Round-robin session assignment to avoid collisions while staying under 500 session limit
+	sessionID := sessionIDs[requestIndex%len(sessionIDs)]
 
 	input := &bedrockagentcore.InvokeAgentRuntimeInput{
 		AgentRuntimeArn:  &cfg.AgentCoreRuntimeARN,
@@ -175,6 +186,8 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 		return LambdaResponse{}, fmt.Errorf("failed to load questions from S3 s3://%s/%s: %w",
 			cfg.SeedQuestionsBucket, cfg.SeedQuestionsKey, err)
 	}
+
+	initSessionIDs()
 
 	// Execute ramp-up
 	start := time.Now()
@@ -236,7 +249,7 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 				defer func() { <-sem }()
 
 				question := selectQuestion(elapsedSec, req.RampDurationSecs, idx)
-				err := invokeAgentCore(ctx, question)
+				err := invokeAgentCore(ctx, question, idx)
 
 				loadMu.Lock()
 				totalReqs++
