@@ -26,7 +26,6 @@ from cache_constants import (
     CLAUDE_SONNET_4_OUTPUT_COST,
 )
 from support_agent import invoke_agent
-from metrics_publisher import AgentCoreMetricsPublisher
 
 app = BedrockAgentCoreApp()
 
@@ -48,9 +47,6 @@ bedrock_runtime = cast(
 
 cloudwatch = boto3.client("cloudwatch", region_name=AWS_REGION)
 CLOUDWATCH_NAMESPACE = os.environ.get("CLOUDWATCH_NAMESPACE", "SemanticSupportDesk")
-
-# Session-level metrics publisher (persists across invocations in AgentCore)
-metrics_publisher = AgentCoreMetricsPublisher(app, cloudwatch, CLOUDWATCH_NAMESPACE)
 
 # Lazy-load cache client to prevent startup failures if ElastiCache is unreachable
 _cache_client = None
@@ -173,10 +169,7 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
 def emit_metrics(cached: bool, latency_ms: float, similarity: float, 
                  cost_avoided: float = 0.0, cost_paid: float = 0.0):
     """
-    Emit metrics asynchronously via AgentCore metrics publisher.
-    
-    Metrics are buffered and published in batches to avoid blocking responses.
-    Safe for high-throughput scenarios (100+ req/s) and persistent AgentCore sessions.
+    Emit metrics synchronously to CloudWatch.
     
     Args:
         cached: Whether response was served from cache (True) or agent (False)
@@ -185,37 +178,52 @@ def emit_metrics(cached: bool, latency_ms: float, similarity: float,
         cost_avoided: Estimated Bedrock cost savings in dollars (cache hits only)
         cost_paid: Actual Bedrock cost incurred in dollars (cache misses only)
     """
-    timestamp = time.time()
+    from datetime import datetime, timezone
+    timestamp = datetime.now(timezone.utc)
     cache_status = "Hit" if cached else "Miss"
     
-    # Add metrics to async publisher (non-blocking)
-    metrics_publisher.add_metric(
-        "Latency", latency_ms, "Milliseconds",
-        dimensions=[{"Name": "CacheStatus", "Value": cache_status}],
-        timestamp=timestamp
-    )
-    
-    metrics_publisher.add_metric(
-        "CacheHit", 1.0 if cached else 0.0, "Count",
-        timestamp=timestamp
-    )
-    
-    metrics_publisher.add_metric(
-        "SimilarityScore", similarity, "None",
-        timestamp=timestamp
-    )
+    metric_data = [
+        {
+            'MetricName': 'Latency',
+            'Value': latency_ms,
+            'Unit': 'Milliseconds',
+            'Timestamp': timestamp,
+            'Dimensions': [{'Name': 'CacheStatus', 'Value': cache_status}]
+        },
+        {
+            'MetricName': 'CacheHit',
+            'Value': 1.0 if cached else 0.0,
+            'Unit': 'Count',
+            'Timestamp': timestamp
+        },
+        {
+            'MetricName': 'SimilarityScore',
+            'Value': similarity,
+            'Unit': 'None',
+            'Timestamp': timestamp
+        }
+    ]
     
     if cached and cost_avoided > 0:
-        metrics_publisher.add_metric(
-            "CostSavings", cost_avoided, "None",
-            timestamp=timestamp
-        )
+        metric_data.append({
+            'MetricName': 'CostSavings',
+            'Value': cost_avoided,
+            'Unit': 'None',
+            'Timestamp': timestamp
+        })
     
     if not cached and cost_paid > 0:
-        metrics_publisher.add_metric(
-            "CostPaid", cost_paid, "None",
-            timestamp=timestamp
-        )
+        metric_data.append({
+            'MetricName': 'CostPaid',
+            'Value': cost_paid,
+            'Unit': 'None',
+            'Timestamp': timestamp
+        })
+    
+    try:
+        cloudwatch.put_metric_data(Namespace=CLOUDWATCH_NAMESPACE, MetricData=metric_data)
+    except Exception as e:
+        logger.error(f"[METRICS] Failed to publish: {e}")
 
 
 @app.entrypoint
