@@ -199,10 +199,14 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 	// Reference: "failed to get rate limit token, retry quota exceeded"
 	sem := make(chan struct{}, maxConcurrentRequests)
 
+	// Global WaitGroup - wait for ALL requests at the end, not per-second
+	var wg sync.WaitGroup
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	elapsed := 0
+	requestIndex := 0
 	for range ticker.C {
 		if elapsed >= req.RampDurationSecs {
 			break
@@ -212,22 +216,26 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 		progress := float64(elapsed) / float64(req.RampDurationSecs)
 		currentRPS := req.RampStartRPS + int(float64(req.RampEndRPS-req.RampStartRPS)*progress)
 
-		log.Printf("[%ds] Target RPS: %d | Total: %d | Success: %d | Failures: %d",
-			elapsed, currentRPS, totalReqs, successes, failures)
+		loadMu.Lock()
+		log.Printf("[%ds] Target RPS: %d | Total: %d | Success: %d | Failures: %d | InFlight: ~%d",
+			elapsed, currentRPS, totalReqs, successes, failures, int64(requestIndex)-totalReqs)
+		loadMu.Unlock()
 
-		// Launch goroutines for this second's requests
-		var wg sync.WaitGroup
-		for i := range currentRPS {
+		// Launch goroutines for this second's requests (fire-and-forget)
+		for range currentRPS {
 			wg.Add(1)
-			requestIndex := int(totalReqs) + i
-			go func(idx int) {
+			idx := requestIndex
+			elapsedCopy := elapsed // Capture for closure - avoids all goroutines seeing final elapsed value
+			requestIndex++
+
+			go func(idx, elapsedSec int) {
 				defer wg.Done()
 
-				// Acquire semaphore slot
+				// Acquire semaphore slot (blocks if at capacity)
 				sem <- struct{}{}
 				defer func() { <-sem }()
 
-				question := selectQuestion(elapsed, req.RampDurationSecs, idx)
+				question := selectQuestion(elapsedSec, req.RampDurationSecs, idx)
 				err := invokeAgentCore(ctx, question)
 
 				loadMu.Lock()
@@ -239,11 +247,14 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 					successes++
 				}
 				loadMu.Unlock()
-			}(requestIndex)
+			}(idx, elapsedCopy)
 		}
-		wg.Wait()
 		elapsed++
 	}
+
+	// Wait for all in-flight requests to complete
+	log.Printf("Ramp complete, waiting for %d in-flight requests...", requestIndex-int(totalReqs))
+	wg.Wait()
 
 	log.Printf("Ramp-up complete: %d total, %d success, %d failures", totalReqs, successes, failures)
 	return totalReqs, successes, failures
