@@ -63,7 +63,7 @@ var (
 	loadMu          sync.Mutex
 )
 
-const maxConcurrentRequests = 50 // Limit concurrent API calls to avoid throttling
+const maxConcurrentRequests = 15 // Limit concurrent API calls to avoid AgentCore throttling
 
 func loadConfig() {
 	cfg = Config{
@@ -161,13 +161,13 @@ func invokeAgentCore(ctx context.Context, question string) error {
 func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, error) {
 	// Set defaults
 	if req.RampDurationSecs == 0 {
-		req.RampDurationSecs = 60
+		req.RampDurationSecs = 180
 	}
 	if req.RampStartRPS == 0 {
 		req.RampStartRPS = 1
 	}
 	if req.RampEndRPS == 0 {
-		req.RampEndRPS = 50
+		req.RampEndRPS = 20
 	}
 
 	// Load questions from S3
