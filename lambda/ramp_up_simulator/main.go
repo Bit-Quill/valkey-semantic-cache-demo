@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"os"
 	"sync"
 	"time"
@@ -60,12 +59,10 @@ var (
 	agentCoreClient *bedrockagentcore.Client
 	baseQuestions   []string // 50 base questions (cache primers)
 	variations      []string // 450 variations
-	sessionIDs      []string
 	questionsLoaded bool
 	loadMu          sync.Mutex
 )
 
-const numSessions = 25 // Balance between collision avoidance and metrics batching efficiency
 const maxConcurrentRequests = 50 // Limit concurrent API calls to avoid throttling
 
 func loadConfig() {
@@ -137,14 +134,6 @@ func loadQuestionsFromS3(ctx context.Context) error {
 	return nil
 }
 
-func initSessionIdDs() {
-	sessionIDs = make([]string, numSessions)
-	for i := range numSessions {
-		sessionIDs[i] = uuid.New().String() // 36 characters (meets ≥33 requirement)
-	}
-	log.Printf("initialized %d session IDs", len(sessionIDs))
-}
-
 func invokeAgentCore(ctx context.Context, question string) error {
 	payload := map[string]string{
 		"request_text": question,
@@ -154,7 +143,7 @@ func invokeAgentCore(ctx context.Context, question string) error {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	sessionID := sessionIDs[rand.IntN(len(sessionIDs))]
+	sessionID := uuid.New().String()
 
 	input := &bedrockagentcore.InvokeAgentRuntimeInput{
 		AgentRuntimeArn:  &cfg.AgentCoreRuntimeARN,
@@ -187,8 +176,6 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 			cfg.SeedQuestionsBucket, cfg.SeedQuestionsKey, err)
 	}
 
-	initSessionIdDs()
-
 	// Execute ramp-up
 	start := time.Now()
 	totalReqs, successes, failures := executeRampUp(ctx, req)
@@ -206,7 +193,7 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 
 func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64) {
 	var totalReqs, successes, failures int64
-	
+
 	// Semaphore to limit concurrent requests and avoid AWS API throttling
 	// Bedrock AgentCore has default TPS limits that can be exceeded with 100 concurrent requests
 	// Reference: "failed to get rate limit token, retry quota exceeded"
@@ -235,7 +222,7 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 			requestIndex := int(totalReqs) + i
 			go func(idx int) {
 				defer wg.Done()
-				
+
 				// Acquire semaphore slot
 				sem <- struct{}{}
 				defer func() { <-sem }()
