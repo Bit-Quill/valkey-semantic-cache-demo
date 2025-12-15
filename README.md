@@ -227,8 +227,8 @@ Hash:
 - [x] End-to-end flow validation
 - [x] Error handling (rate limits, model availability)
 - [x] Local and AWS deployment testing
-- [ ] Performance optimization
-- [ ] Seed data creation (sample requests)
+- [x] Performance optimization
+- [x] Seed data creation (sample requests)
 
 ### Task 7: Simulation & Presentation Layer
 
@@ -344,3 +344,17 @@ valkey-semantic-cache-demo/
 - Review similarity threshold (may need adjustment < 0.85)
 - Examine request diversity in simulation templates
 - Verify embeddings are being generated correctly
+
+### Throughput Limits
+
+The demo is constrained by several AWS service limits:
+
+| Factor | Limit | Impact |
+|--------|-------|--------|
+| **AgentCore InvokeAgentRuntime TPS** | 25 TPS per agent | Primary bottleneck - max 25 concurrent requests |
+| **AgentCore Active Sessions** | 500 concurrent (us-east-2) | Sessions idle for 15 min; requires session pooling |
+| **AgentCore New Session Rate** | 100 TPM per endpoint | Limits new session creation speed |
+| **Cache Miss Latency** | ~5-10 seconds | Slow agent responses during cache priming create backlog |
+| **AWS SDK Rate Limiter** | Built-in retry quota | `failed to get rate limit token` when SDK limiter exhausted |
+
+**Effective throughput**: ~5-6 RPS (~330 requests/min) due to these constraints. All limits are adjustable via AWS Service Quotas.
