@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 ELASTICACHE_ENDPOINT = os.environ.get("ELASTICACHE_ENDPOINT", "localhost")
 ELASTICACHE_PORT = int(os.environ.get("ELASTICACHE_PORT", "6379"))
-SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.85"))
+SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.80"))
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "amazon.titan-embed-text-v2:0")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
 

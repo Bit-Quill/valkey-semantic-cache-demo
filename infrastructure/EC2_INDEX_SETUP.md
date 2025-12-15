@@ -226,6 +226,33 @@ pip3.12 install --upgrade valkey-glide-sync
 
 **Solution**: This has been resolved. The CloudFormation template now includes a custom parameter group with 30% memory reserve for t4g.small instances.
 
+## Cache Reset (For Demo Reruns)
+
+To clear cached data while preserving the vector index:
+
+```bash
+# Connect to EC2 jump host
+ssh -i ~/.ssh/semantic-cache-demo-key.pem ec2-user@18.221.90.67
+
+# Set endpoint for convenience
+CACHE_HOST=sevoxy28zhyaiz6.xkacez.ng.0001.use2.cache.amazonaws.com
+
+# Delete all vector entries
+redis6-cli -h $CACHE_HOST --scan --pattern "request:vector:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
+
+# Delete all request-response entries  
+redis6-cli -h $CACHE_HOST --scan --pattern "rr:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
+
+# Delete global metrics (if exists)
+redis6-cli -h $CACHE_HOST DEL metrics:global
+
+# Verify cache is empty but index preserved
+redis6-cli -h $CACHE_HOST DBSIZE        # Should return 0
+redis6-cli -h $CACHE_HOST FT._LIST      # Should return idx:requests
+```
+
+**Note**: `FLUSHALL` would also delete the vector index - use the selective commands above to preserve it.
+
 ## Cost
 
 - **EC2 t3.micro**: ~$0.01/hour

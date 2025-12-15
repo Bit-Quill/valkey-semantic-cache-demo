@@ -16,12 +16,12 @@ This application provides developers and AWS customers with a concrete, measurab
 
 ## ✨ Key Features
 
-- **Semantic Caching**: Uses Titan embeddings with HNSW algorithm (0.85 similarity threshold) to identify semantically similar requests
+- **Semantic Caching**: Uses Titan embeddings with HNSW algorithm (0.80 similarity threshold) to identify semantically similar requests
 - **Multi-Agent Architecture**: SupportAgent orchestrates with OrderTrackingAgent using Strands framework
 - **Intelligent Cache Layer**: @entrypoint intercepts requests before agent invocation, returning cached responses in <100ms
 - **Agent Tooling**: OrderTrackingAgent uses decorated tools to check order status and delivery information
 - **Real-time Metrics**: CloudWatch Dashboard visualizes latency reduction, cost savings, cache efficiency, and match scores
-- **Traffic Simulation**: Lambda-based ramp-up simulator mimics incident spikes (1 → 100 requests/second)
+- **Traffic Simulation**: Lambda-based ramp-up simulator (1 → 11 requests/second over 180 seconds)
 - **Conference-Ready**: Live metrics suitable for projection, optional cache reset between demos
 
 ## 🏗️ Architecture
@@ -31,9 +31,9 @@ This application provides developers and AWS customers with a concrete, measurab
 ### Data Flow
 
 1. **Client** initiates request via **API Gateway** to **Ramp-up Simulator** (Lambda)
-2. **Lambda** gradually increases throughput (1 → 100 requests/second over 30 seconds)
+2. **Lambda** gradually increases throughput (1 → 11 requests/second over 180 seconds)
 3. **@entrypoint** generates Titan embedding and queries **ElastiCache** vector index
-4. **Cache Hit (≥0.85 similarity)**:
+4. **Cache Hit (≥0.80 similarity)**:
    - Returns cached response immediately (<100ms)
    - Logs metrics: latency, avoided cost, match score
 5. **Cache Miss**:
@@ -99,13 +99,23 @@ This application provides developers and AWS customers with a concrete, measurab
 
 ### Resetting the Demo
 
-For conference presentations, reset the cache between runs:
+For conference presentations, reset the cache between runs via EC2 jump host:
 
 ```bash
-aws lambda invoke \
-  --function-name CacheResetLambda \
-  --payload '{"action": "flush"}' \
-  reset-response.json
+# SSH to EC2 jump host
+ssh -i ~/.ssh/semantic-cache-demo-key.pem ec2-user@18.221.90.67
+
+# Set endpoint
+CACHE_HOST=sevoxy28zhyaiz6.xkacez.ng.0001.use2.cache.amazonaws.com
+
+# Clear cached data (preserves vector index)
+redis6-cli -h $CACHE_HOST --scan --pattern "request:vector:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
+redis6-cli -h $CACHE_HOST --scan --pattern "rr:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
+redis6-cli -h $CACHE_HOST DEL metrics:global
+
+# Verify
+redis6-cli -h $CACHE_HOST DBSIZE        # Should return 0
+redis6-cli -h $CACHE_HOST FT._LIST      # Should return idx:requests
 ```
 
 ## 🛠️ Tech Stack
@@ -222,7 +232,7 @@ Hash:
 
 ### Task 7: Simulation & Presentation Layer
 
-- [x] Ramp-up Lambda implementation (1 → 50 requests/second over 60s)
+- [x] Ramp-up Lambda implementation (1 → 11 requests/second over 180s)
 - [x] Go-based Lambda with deterministic question selection
 - [x] S3-based seed questions (50 base scenarios + 450 variations)
 - [x] SAM template with IAM policies for deployment
@@ -236,9 +246,9 @@ Hash:
 
 1. **Fresh Start**: Show CloudWatch Dashboard (all metrics at zero)
 2. **Ramp-up Simulation**: Invoke Lambda via AWS Console or CLI
-   - Linear ramp: 1 → 50 req/s over 60 seconds (~1,500 total requests)
-   - First 30s: Base questions prime the cache (45% hit rate initially)
-   - Second 30s: Variations hit cache (90% hit rate)
+   - Linear ramp: 1 → 11 req/s over 180 seconds (~1,080 total requests)
+   - First 90s: Base questions prime the cache
+   - Second 90s: Variations hit cache (80%+ hit rate)
 3. **Live Metrics**: CloudWatch Dashboard shows real-time results
    - Cache hit ratio: 45% → 90% in 1 minute
    - Average cache hit latency: ~90ms (vs. 2-3s for full agent chain)
@@ -261,7 +271,7 @@ ELASTICACHE_ENDPOINT=your-cluster.cache.amazonaws.com:6379
 BEDROCK_SUPPORT_AGENT_MODEL=anthropic.claude-sonnet-4-20250514
 BEDROCK_TRACKING_AGENT_MODEL=anthropic.claude-sonnet-3-5-v2
 EMBEDDING_MODEL=amazon.titan-embed-text-v2:0
-SIMILARITY_THRESHOLD=0.85
+SIMILARITY_THRESHOLD=0.80
 CLOUDWATCH_NAMESPACE=SemanticSupportDesk
 ```
 
@@ -269,8 +279,8 @@ CLOUDWATCH_NAMESPACE=SemanticSupportDesk
 
 ```env
 RAMP_START_RPS=1
-RAMP_END_RPS=100
-RAMP_DURATION_SECONDS=30
+RAMP_END_RPS=11
+RAMP_DURATION_SECONDS=180
 REQUEST_TEMPLATES_PATH=./templates/requests.json
 ```
 

@@ -178,7 +178,7 @@ func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, erro
 		req.RampStartRPS = 1
 	}
 	if req.RampEndRPS == 0 {
-		req.RampEndRPS = 15
+		req.RampEndRPS = 11
 	}
 
 	// Load questions from S3
