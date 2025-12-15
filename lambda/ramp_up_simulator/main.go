@@ -65,7 +65,7 @@ var (
 )
 
 const numSessions = 400          // Stay under 500 concurrent session limit (sessions idle for 15 min)
-const maxConcurrentRequests = 15 // Limit concurrent API calls to avoid AgentCore throttling
+const maxConcurrentRequests = 25 // Match AgentCore's 25 TPS limit per agent
 
 func loadConfig() {
 	cfg = Config{
