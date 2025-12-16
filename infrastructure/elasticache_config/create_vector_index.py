@@ -86,7 +86,7 @@ def create_vector_index(client: GlideClient) -> None:
 
     Index Schema:
         - request_id (TAG): Unique identifier for the request
-        - embedding (VECTOR HNSW): 1536-dimensional vector for similarity search
+        - embedding (VECTOR HNSW): Vector for similarity search (VECTOR_DIM from cache_constants)
         - timestamp (NUMERIC): Unix timestamp for TTL/ordering
 
     The index is created on HASH keys with prefix 'request:vector:'

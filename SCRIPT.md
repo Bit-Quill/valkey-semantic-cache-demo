@@ -139,7 +139,7 @@ cd ~/valkey-semantic-cache-demo/agents
 uv run python ../infrastructure/elasticache_config/create_vector_index.py
 ```
 
-> "This creates the HNSW vector index with 1024 dimensions and cosine distance - the foundation for semantic similarity matching."
+> "This creates the HNSW vector index with cosine distance. The dimension (1024) comes from `cache_constants.py` - matching what Titan Embeddings generates in `entrypoint.py`."
 
 ---
 
