@@ -129,7 +129,17 @@ aws cloudformation describe-stacks --stack-name semantic-cache-demo-agentcore \
   --query 'Stacks[0].Outputs' --output table --region us-east-2
 ```
 
-> "The ElastiCache stack provisions the Valkey cluster with HNSW vector index. The AgentCore stack creates IAM roles, ECR repository, S3 bucket, and VPC endpoints - without those endpoints, the agent couldn't reach ElastiCache or emit CloudWatch metrics from within the VPC."
+> "The ElastiCache stack provisions the Valkey cluster. The AgentCore stack creates IAM roles, ECR repository, S3 bucket, and VPC endpoints - without those endpoints, the agent couldn't reach ElastiCache or emit CloudWatch metrics from within the VPC."
+
+### Vector Index Creation
+
+```bash
+# On EC2 - create HNSW index for semantic search
+cd ~/valkey-semantic-cache-demo/agents
+uv run python ../infrastructure/elasticache_config/create_vector_index.py
+```
+
+> "This creates the HNSW vector index with 1024 dimensions and cosine distance - the foundation for semantic similarity matching."
 
 ---
 
