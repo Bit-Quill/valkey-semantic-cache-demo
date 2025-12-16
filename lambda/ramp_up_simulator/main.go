@@ -274,12 +274,11 @@ func executeRampUp(ctx context.Context, req LambdaRequest) (int64, int64, int64)
 }
 
 func selectQuestion(elapsedSecs, totalDuration, requestIndex int) string {
-	// First half (30s): deterministically cycle through ALL base questions
-	// This guarantees every base question primes the cache exactly once
-	if elapsedSecs < totalDuration/2 {
+	// First 30s: cycle through base questions to prime cache
+	if elapsedSecs < 30 {
 		return baseQuestions[requestIndex%len(baseQuestions)]
 	}
-	// Second half: cycle through variations (should hit cache)
+	// Remaining time: cycle through variations (should hit cache)
 	return variations[requestIndex%len(variations)]
 }
 
