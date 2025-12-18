@@ -244,11 +244,11 @@ Hash:
 
 ### Task 8: Dashboard Enhancements
 
-- [ ] Add Cost Reduction % single-value widget (expression-based)
-- [ ] Add Pie Chart for Cache Hits vs Misses distribution
-- [ ] Remove Similarity Score Distribution widget (not a clear KPI)
-- [ ] Reorganize layout for business impact (top row: key KPIs)
-- [ ] Deploy and validate updated dashboard
+- [x] Add Cost Reduction % single-value widget (expression-based)
+- [x] Add Pie Chart for Cache Hits vs Misses distribution
+- [x] Remove Similarity Score Distribution widget (not a clear KPI)
+- [x] Reorganize layout for business impact (top row: key KPIs)
+- [x] Deploy and validate updated dashboard
 
 ### Task 9: Extend Ramp-Up Lambda with Cache Management (Eliminate EC2 for Cache Ops)
 
