@@ -22,7 +22,6 @@ Parameters:
     Type: String
     Default: "cache.t4g.small"
     AllowedValues:
-      - cache.t4g.micro
       - cache.t4g.small
       - cache.t4g.medium
     Description: "ElastiCache node type (t4g.small or larger required for vector search)"
