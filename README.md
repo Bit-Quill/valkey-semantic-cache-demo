@@ -99,23 +99,35 @@ This application provides developers and AWS customers with a concrete, measurab
 
 ### Resetting the Demo
 
-For conference presentations, reset the cache between runs via EC2 jump host:
+For conference presentations, reset the cache between runs via the cache management Lambda:
 
 ```bash
-# SSH to EC2 jump host
-ssh -i ~/.ssh/semantic-cache-demo-key.pem ec2-user@18.221.90.67
+# Via AWS CLI
+aws lambda invoke \
+  --function-name semantic-cache-demo-cache-management \
+  --region us-east-2 \
+  --payload '{"action": "reset-cache"}' \
+  response.json && cat response.json
 
-# Set endpoint
-CACHE_HOST=sevoxy28zhyaiz6.xkacez.ng.0001.use2.cache.amazonaws.com
+# Or via AWS Console: Test tab with payload {"action": "reset-cache"}
+```
 
-# Clear cached data (preserves vector index)
-redis6-cli -h $CACHE_HOST --scan --pattern "request:vector:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
-redis6-cli -h $CACHE_HOST --scan --pattern "rr:*" | xargs -L 100 redis6-cli -h $CACHE_HOST DEL
-redis6-cli -h $CACHE_HOST DEL metrics:global
+Other cache management actions:
 
-# Verify
-redis6-cli -h $CACHE_HOST DBSIZE        # Should return 0
-redis6-cli -h $CACHE_HOST FT._LIST      # Should return idx:requests
+```bash
+# Health check (verify connectivity, dbsize, index status)
+aws lambda invoke \
+  --function-name semantic-cache-demo-cache-management \
+  --region us-east-2 \
+  --payload '{"action": "health-check"}' \
+  response.json && cat response.json
+
+# Create index (if needed after full cache flush)
+aws lambda invoke \
+  --function-name semantic-cache-demo-cache-management \
+  --region us-east-2 \
+  --payload '{"action": "create-index"}' \
+  response.json && cat response.json
 ```
 
 ## 🛠️ Tech Stack
@@ -250,14 +262,14 @@ Hash:
 - [x] Reorganize layout for business impact (top row: key KPIs)
 - [x] Deploy and validate updated dashboard
 
-### Task 9: Extend Ramp-Up Lambda with Cache Management (Eliminate EC2 for Cache Ops)
+### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops)
 
-- [ ] Add `Action` field to Event struct: `"simulate"` (default), `"create-index"`, `"reset-cache"`, `"health-check"`
-- [ ] Implement `create-index` action (HNSW vector index creation)
-- [ ] Implement `reset-cache` action (flush `request:vector:*`, `rr:*`, `metrics:global`)
-- [ ] Implement `health-check` action (DBSIZE, index status, connection test)
-- [ ] Update SAM template with ElastiCache VPC access (subnets, security group)
-- [ ] Test and document all actions
+- [x] Create separate Python Lambda (`cache_management/`) with valkey-glide-sync
+- [x] Implement `health-check` action (ping, DBSIZE, FT._LIST)
+- [x] Implement `reset-cache` action (SCAN + DEL for cached keys)
+- [x] Implement `create-index` action (FT.CREATE with HNSW)
+- [x] SAM template with VPC config for ElastiCache access
+- [x] Deploy and test all actions
 
 ### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
 
@@ -367,8 +379,8 @@ valkey-semantic-cache-demo/
 │   ├── order_tracking_agent.py     # OrderTrackingAgent with @tool decorators
 │   └── entrypoint.py               # @entrypoint with caching logic
 ├── lambda/
-│   ├── ramp_up_simulator/          # Traffic simulation Lambda
-│   └── cache_reset/                # Cache management Lambda
+│   ├── ramp_up_simulator/          # Traffic simulation Lambda (Go)
+│   └── cache_management/           # Cache management Lambda (Python)
 ├── infrastructure/
 │   ├── cloudformation/             # Infrastructure as Code
 │   └── elasticache_config/         # Valkey cluster configuration

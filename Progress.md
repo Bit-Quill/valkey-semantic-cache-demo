@@ -1,7 +1,7 @@
 # Retail Support Desk - Semantic Caching Demo - Progress Tracker
 
 **Last Updated**: 2025-12-18  
-**Current Phase**: Task 9 - Extend Ramp-Up Lambda with Cache Management
+**Current Phase**: Task 9 Complete - Cache Management Lambda deployed
 
 ---
 
@@ -113,14 +113,20 @@ AWS stakeholder feedback from initial demo presentation:
 - [x] Reorganize layout for business impact (top row: key KPIs)
 - [x] Deploy and validate updated dashboard
 
-### Task 9: Extend Ramp-Up Lambda with Cache Management (Eliminate EC2 for Cache Ops)
+### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops) ✅
 
-- [ ] Add `Action` field to Event struct: `"simulate"` (default), `"create-index"`, `"reset-cache"`, `"health-check"`
-- [ ] Implement `create-index` action (HNSW vector index creation)
-- [ ] Implement `reset-cache` action (flush `request:vector:*`, `rr:*`, `metrics:global`)
-- [ ] Implement `health-check` action (DBSIZE, index status, connection test)
-- [ ] Update SAM template with ElastiCache VPC access (subnets, security group)
-- [ ] Test and document all actions
+**Decision**: Created separate Python Lambda instead of extending Go ramp-up simulator.
+- Go Lambda in VPC would lose internet access (can't reach AgentCore without NAT Gateway)
+- valkey-glide Go client requires CGO (complex cross-compilation for Lambda)
+- Python valkey-glide-sync works out of the box, aligns with agents codebase
+
+**Implemented**:
+- [x] New `lambda/cache_management/` with Python handler using valkey-glide-sync
+- [x] `health-check` action: ping, DBSIZE, FT._LIST
+- [x] `reset-cache` action: SCAN + DEL for `request:vector:*`, `rr:*`, `metrics:global`
+- [x] `create-index` action: FT.CREATE with HNSW (matches create_vector_index.py params)
+- [x] SAM template `cache-management.yaml` with VPC config
+- [x] Deployed and tested all three actions
 
 ### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
 
