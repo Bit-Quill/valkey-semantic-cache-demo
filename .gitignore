@@ -17,3 +17,6 @@ requirements.txt
 bootstrap
 *.zip
 
+# SAM build artifacts
+.aws-sam/
+
