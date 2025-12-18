@@ -1,7 +1,34 @@
 # Retail Support Desk - Semantic Caching Demo - Progress Tracker
 
-**Last Updated**: 2025-12-12  
-**Current Phase**: Task 6 - Integration & Testing
+**Last Updated**: 2025-12-18  
+**Current Phase**: Task 8 - Dashboard Enhancements (Post-Feedback Iteration)
+
+---
+
+## 📣 Feedback Received (2025-12-16)
+
+AWS stakeholder feedback from initial demo presentation:
+
+### Dashboard Improvements
+- Cost reduction should also be available in % (e.g., "78% Cost Reduction" vs raw dollars)
+- Add pie chart showing distribution between hits vs misses
+- Similarity threshold broken down by hits/misses not a clear KPI - remove it
+
+### Demo Simplification
+- Demo paying too much attention to implementation details
+- Must be consumable by non-technical people
+- Need minimum UI that can sit on top of functionality
+- Total duration should target 5 minutes
+
+### Infrastructure Simplification
+- Too complex with 5 CF/SAM templates and 9+ management scripts
+- Need single command deployment (`./deploy.sh`)
+- Consider CDK for better composition
+
+### Critical: Eliminate EC2 Jump Server
+- Index creation, AgentCore config/deploy, cache reset all happen from EC2
+- Must automate everything - no manual SSH required
+- Solution: Lambda for cache ops + CodeBuild for AgentCore deployment
 
 ---
 
@@ -77,6 +104,99 @@
 - [ ] CacheResetLambda implementation (optional - manual redis-cli flush)
 - [ ] Demo script finalization
 - [ ] Conference presentation rehearsal
+
+### Task 8: Dashboard Enhancements 🚧
+
+- [ ] Add Cost Reduction % single-value widget (expression: `CostSavings/(CostSavings+CostPaid)*100`)
+- [ ] Add Pie Chart for Cache Hits vs Misses distribution
+- [ ] Remove Similarity Score Distribution widget (not a clear KPI for non-technical audience)
+- [ ] Reorganize layout for business impact (top row: key KPIs)
+- [ ] Deploy and validate updated dashboard
+
+### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops)
+
+- [ ] Create Python Lambda function with `valkey-glide` or `redis-py`
+- [ ] Implement `create-index` action (HNSW vector index creation)
+- [ ] Implement `reset-cache` action (flush `request:vector:*`, `rr:*`, `metrics:global`)
+- [ ] Implement `health-check` action (DBSIZE, index status, connection test)
+- [ ] Create SAM/CDK template (Lambda in VPC with ElastiCache security group)
+- [ ] Add CloudFormation Custom Resource for index creation on stack deploy
+- [ ] Test and document all actions
+
+### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
+
+- [ ] Create CodeBuild project for AgentCore deployment (runs in VPC)
+- [ ] Create buildspec.yaml with non-interactive `agentcore configure` and `agentcore deploy`
+- [ ] CLI flags: `--vpc`, `--subnets`, `--security-groups`, `--execution-role`, `--code-build-execution-role`
+- [ ] Deploy command with `--env` flags for ELASTICACHE_ENDPOINT, SIMILARITY_THRESHOLD, etc.
+- [ ] Add CodeBuild project to CDK/CloudFormation
+- [ ] Create CloudFormation Custom Resource to trigger CodeBuild on stack deploy
+- [ ] Test end-to-end automated deployment
+
+### Task 11: Infrastructure Consolidation (CDK - Single Command Deploy)
+
+- [ ] Initialize CDK project (TypeScript) in `infrastructure/cdk/`
+- [ ] Create VpcEndpointsStack construct (port existing template)
+- [ ] Create ElastiCacheStack construct (port existing template)
+- [ ] Create AgentCoreStack construct (IAM roles, ECR repo, S3 bucket)
+- [ ] Create DashboardStack construct (with Task 8 enhancements)
+- [ ] Create CacheManagementStack construct (Lambda from Task 9)
+- [ ] Create AgentDeployStack construct (CodeBuild from Task 10)
+- [ ] Create TrafficSimulatorStack construct (port ramp-up-simulator)
+- [ ] Create unified `./deploy.sh` script (`cdk bootstrap && cdk deploy --all`)
+- [ ] Create unified `./teardown.sh` script (`cdk destroy --all`)
+- [ ] Archive legacy CloudFormation to `infrastructure/cloudformation-legacy/`
+- [ ] Update README with single-command deployment instructions
+
+### Task 12: Simple Demo UI
+
+- [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
+- [ ] Create Metrics API Lambda (queries CloudWatch, returns JSON)
+- [ ] Create API Gateway (POST /start, POST /reset, GET /metrics)
+- [ ] Add polling/auto-refresh logic (every 5s during demo)
+- [ ] Add CloudWatch dashboard iframe for detailed view (optional)
+- [ ] Style for conference projection (large fonts, high contrast)
+- [ ] Deploy to S3 + CloudFront (static hosting with HTTPS)
+- [ ] Add UI resources to CDK stack
+
+### Task 13: Demo Script Simplification
+
+- [ ] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
+- [ ] Prepare business impact talking points (cost savings, latency reduction)
+- [ ] Record fallback demo video (3-minute backup recording)
+- [ ] Create simplified slides (3-4 slides, optional)
+- [ ] Practice run with timing (ensure < 5 minutes)
+- [ ] Update SCRIPT.md with new simplified version
+
+---
+
+## 🔧 AgentCore CLI Reference (for Task 10 Automation)
+
+Non-interactive commands used from EC2 that will be automated via CodeBuild:
+
+```bash
+# Configure agent (non-interactive with all flags)
+agentcore configure \
+  --entrypoint entrypoint.py \
+  --name semantic_cache_demo \
+  --execution-role arn:aws:iam::507286591552:role/AgentCoreRuntime-us-east-2 \
+  --code-build-execution-role arn:aws:iam::507286591552:role/AgentCoreCodeBuild-us-east-2 \
+  --disable-memory \
+  --region us-east-2 \
+  --vpc \
+  --subnets subnet-0257db422851c0d6b,subnet-0da73b5aadcb5e744,subnet-0e80dd54d46959a91 \
+  --security-groups sg-077091f3ac5a55b60
+
+# Deploy agent with environment variables
+agentcore deploy \
+  --env ELASTICACHE_ENDPOINT=sevoxy28zhyaiz6.xkacez.ng.0001.use2.cache.amazonaws.com \
+  --env ELASTICACHE_PORT=6379 \
+  --env SIMILARITY_THRESHOLD=0.80 \
+  --env EMBEDDING_MODEL=amazon.titan-embed-text-v2:0 \
+  --env AWS_REGION=us-east-2
+```
+
+**Key insight**: Both commands are fully non-interactive when all flags are provided. This enables CodeBuild automation.
 
 ---
 

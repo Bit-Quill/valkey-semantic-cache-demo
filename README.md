@@ -242,6 +242,69 @@ Hash:
 - [ ] Cache reset Lambda (optional - manual flush via redis-cli)
 - [ ] Demo script and walkthrough
 
+### Task 8: Dashboard Enhancements
+
+- [ ] Add Cost Reduction % single-value widget (expression-based)
+- [ ] Add Pie Chart for Cache Hits vs Misses distribution
+- [ ] Remove Similarity Score Distribution widget (not a clear KPI)
+- [ ] Reorganize layout for business impact (top row: key KPIs)
+- [ ] Deploy and validate updated dashboard
+
+### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops)
+
+- [ ] Create Python Lambda function with `valkey-glide` or `redis-py`
+- [ ] Implement `create-index` action (HNSW vector index creation)
+- [ ] Implement `reset-cache` action (flush `request:vector:*`, `rr:*`, `metrics:global`)
+- [ ] Implement `health-check` action (DBSIZE, index status, connection test)
+- [ ] Create SAM/CDK template (Lambda in VPC with ElastiCache security group)
+- [ ] Add CloudFormation Custom Resource for index creation on stack deploy
+- [ ] Test and document all actions
+
+### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
+
+- [ ] Create CodeBuild project for AgentCore deployment (runs in VPC)
+- [ ] Create buildspec.yaml with `agentcore configure` and `agentcore deploy` commands
+- [ ] Configure non-interactive CLI flags: `--vpc`, `--subnets`, `--security-groups`, `--env`
+- [ ] Add CodeBuild project to CDK/CloudFormation
+- [ ] Create CloudFormation Custom Resource to trigger CodeBuild on stack deploy
+- [ ] Handle environment variables (ELASTICACHE_ENDPOINT, SIMILARITY_THRESHOLD, etc.)
+- [ ] Test end-to-end automated deployment
+
+### Task 11: Infrastructure Consolidation (CDK - Single Command Deploy)
+
+- [ ] Initialize CDK project (TypeScript) in `infrastructure/cdk/`
+- [ ] Create VpcEndpointsStack construct (port existing template)
+- [ ] Create ElastiCacheStack construct (port existing template)
+- [ ] Create AgentCoreStack construct (IAM roles, ECR repo, S3 bucket)
+- [ ] Create DashboardStack construct (with Task 8 enhancements)
+- [ ] Create CacheManagementStack construct (Lambda from Task 9)
+- [ ] Create AgentDeployStack construct (CodeBuild from Task 10)
+- [ ] Create TrafficSimulatorStack construct (port ramp-up-simulator)
+- [ ] Create unified `./deploy.sh` script (`cdk bootstrap && cdk deploy --all`)
+- [ ] Create unified `./teardown.sh` script (`cdk destroy --all`)
+- [ ] Archive legacy CloudFormation to `infrastructure/cloudformation-legacy/`
+- [ ] Update README with single-command deployment instructions
+
+### Task 12: Simple Demo UI
+
+- [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
+- [ ] Create Metrics API Lambda (queries CloudWatch, returns JSON)
+- [ ] Create API Gateway (POST /start, POST /reset, GET /metrics)
+- [ ] Add polling/auto-refresh logic (every 5s during demo)
+- [ ] Add CloudWatch dashboard iframe for detailed view (optional)
+- [ ] Style for conference projection (large fonts, high contrast)
+- [ ] Deploy to S3 + CloudFront (static hosting with HTTPS)
+- [ ] Add UI resources to CDK stack
+
+### Task 13: Demo Script Simplification
+
+- [ ] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
+- [ ] Prepare business impact talking points (cost savings, latency reduction)
+- [ ] Record fallback demo video (3-minute backup recording)
+- [ ] Create simplified slides (3-4 slides, optional)
+- [ ] Practice run with timing (ensure < 5 minutes)
+- [ ] Update SCRIPT.md with new simplified version
+
 ## 🎪 Conference Demo Flow
 
 1. **Fresh Start**: Show CloudWatch Dashboard (all metrics at zero)
