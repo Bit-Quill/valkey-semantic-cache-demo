@@ -250,14 +250,13 @@ Hash:
 - [ ] Reorganize layout for business impact (top row: key KPIs)
 - [ ] Deploy and validate updated dashboard
 
-### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops)
+### Task 9: Extend Ramp-Up Lambda with Cache Management (Eliminate EC2 for Cache Ops)
 
-- [ ] Create Python Lambda function with `valkey-glide` or `redis-py`
+- [ ] Add `Action` field to Event struct: `"simulate"` (default), `"create-index"`, `"reset-cache"`, `"health-check"`
 - [ ] Implement `create-index` action (HNSW vector index creation)
 - [ ] Implement `reset-cache` action (flush `request:vector:*`, `rr:*`, `metrics:global`)
 - [ ] Implement `health-check` action (DBSIZE, index status, connection test)
-- [ ] Create SAM/CDK template (Lambda in VPC with ElastiCache security group)
-- [ ] Add CloudFormation Custom Resource for index creation on stack deploy
+- [ ] Update SAM template with ElastiCache VPC access (subnets, security group)
 - [ ] Test and document all actions
 
 ### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
