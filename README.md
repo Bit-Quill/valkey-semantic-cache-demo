@@ -81,33 +81,29 @@ export AWS_REGION=us-east-2
 1. **Clone the repository**
 
 ```bash
-   git clone https://github.com/vasigorc/valkey-semantic-cache-demo.git
-   cd valkey-semantic-cache-demo
+git clone https://github.com/vasigorc/valkey-semantic-cache-demo.git
+cd valkey-semantic-cache-demo
 ```
 
-2. **Set up AWS credentials**
+2. **Deploy all infrastructure (single command)**
 
 ```bash
-   # in ~/.aws/credentials
-   [default]
-   aws_access_key_id=your_key
-   aws_secret_access_key=your_secret
-   aws_region=us-east-1
+# Deploy all 7 stacks + create index + deploy agent
+./deploy.sh --all
+
+# Or deploy infrastructure only (then manually deploy agent)
+./deploy.sh
+./scripts/trigger-agent-deploy.sh
 ```
 
-3. **Trigger simulation via Web Console or CLI**
+3. **Trigger simulation**
 
 ```bash
-   # Via AWS Lambda Console
-   # Navigate to semantic-cache-demo-ramp-up-simulator function
-   # Click Test tab, use empty payload: {}
-
-   # Via AWS CLI
-   aws lambda invoke \
-     --function-name semantic-cache-demo-ramp-up-simulator \
-     --region us-east-2 \
-     --payload '{}' \
-     response.json
+aws lambda invoke \
+  --function-name semantic-cache-demo-ramp-up-simulator \
+  --region us-east-2 \
+  --payload '{}' \
+  response.json
 ```
 
 4. **View metrics**
@@ -296,12 +292,10 @@ Hash:
 ### Task 10: CDK Consolidation + AgentCore Deployment Automation (Merged)
 
 - [x] CodeBuild automation for AgentCore deployment (eliminates EC2 jump host)
-- [x] CDK project initialized with ElastiCache and AgentCore stacks
-- [ ] Complete CDK migration for remaining stacks
-- [ ] Create unified `./deploy.sh` script (`cdk bootstrap && cdk deploy --all`)
-- [ ] Create unified `./teardown.sh` script (`cdk destroy --all`)
-- [ ] Archive legacy CloudFormation to `infrastructure/cloudformation-legacy/`
-- [ ] Update README with single-command deployment instructions
+- [x] Master `deploy.sh` script - single command to deploy all 7 stacks
+- [x] Master `teardown.sh` script - single command to delete all stacks
+- [x] CDK project initialized with ElastiCache and AgentCore stacks (scaffolding)
+- [ ] Complete CDK migration (deferred to post-demo, master scripts achieve the goal)
 
 ### Task 11: Simple Demo UI
 
