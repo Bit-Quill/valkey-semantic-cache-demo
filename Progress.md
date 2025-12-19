@@ -1,7 +1,7 @@
 # Retail Support Desk - Semantic Caching Demo - Progress Tracker
 
-**Last Updated**: 2025-12-18  
-**Current Phase**: Task 9 Complete - Cache Management Lambda deployed
+**Last Updated**: 2025-12-19  
+**Current Phase**: Task 10 In Progress - CodeBuild automation complete, CDK migration pending
 
 ---
 
@@ -128,32 +128,34 @@ AWS stakeholder feedback from initial demo presentation:
 - [x] SAM template `cache-management.yaml` with VPC config
 - [x] Deployed and tested all three actions
 
-### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
+### Task 10: CDK Consolidation + AgentCore Deployment Automation (Merged)
 
-- [ ] Create CodeBuild project for AgentCore deployment (runs in VPC)
-- [ ] Create buildspec.yaml with non-interactive `agentcore configure` and `agentcore deploy`
-- [ ] CLI flags: `--vpc`, `--subnets`, `--security-groups`, `--execution-role`, `--code-build-execution-role`
-- [ ] Deploy command with `--env` flags for ELASTICACHE_ENDPOINT, SIMILARITY_THRESHOLD, etc.
-- [ ] Add CodeBuild project to CDK/CloudFormation
-- [ ] Create CloudFormation Custom Resource to trigger CodeBuild on stack deploy
-- [ ] Test end-to-end automated deployment
+**Decision**: Merged old Tasks 10+11 to avoid throwaway CloudFormation. CodeBuild for AgentCore deployment will be implemented directly in CDK.
 
-### Task 11: Infrastructure Consolidation (CDK - Single Command Deploy)
+**CodeBuild Automation (Complete ✅)**:
+- [x] Create CloudFormation template for CodeBuild project (`agentcore-deploy.yaml`)
+- [x] CodeBuild runs outside VPC (needs PyPI access), deploys agent into VPC
+- [x] Buildspec with `agentcore configure --non-interactive` and `agentcore deploy`
+- [x] Environment variables: ELASTICACHE_ENDPOINT, SIMILARITY_THRESHOLD, etc.
+- [x] Deploy script: `scripts/deploy-agentcore-codebuild.sh` (one-time infra setup)
+- [x] Trigger script: `scripts/trigger-agent-deploy.sh` (single command agent deploy)
+- [x] Tested end-to-end: agent deployed and responding
 
-- [ ] Initialize CDK project (TypeScript) in `infrastructure/cdk/`
+**CDK Migration (Pending)**:
+- [x] Initialize CDK project (TypeScript) in `infrastructure/cdk/`
+- [x] Create ElastiCacheStack construct (ported from CF)
+- [x] Create AgentCoreStack construct with CodeBuild (ported from CF)
 - [ ] Create VpcEndpointsStack construct (port existing template)
-- [ ] Create ElastiCacheStack construct (port existing template)
-- [ ] Create AgentCoreStack construct (IAM roles, ECR repo, S3 bucket)
 - [ ] Create DashboardStack construct (with Task 8 enhancements)
 - [ ] Create CacheManagementStack construct (Lambda from Task 9)
-- [ ] Create AgentDeployStack construct (CodeBuild from Task 10)
 - [ ] Create TrafficSimulatorStack construct (port ramp-up-simulator)
 - [ ] Create unified `./deploy.sh` script (`cdk bootstrap && cdk deploy --all`)
 - [ ] Create unified `./teardown.sh` script (`cdk destroy --all`)
 - [ ] Archive legacy CloudFormation to `infrastructure/cloudformation-legacy/`
 - [ ] Update README with single-command deployment instructions
+- [ ] Test end-to-end automated deployment (no EC2 required)
 
-### Task 12: Simple Demo UI
+### Task 11: Simple Demo UI
 
 - [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
 - [ ] Create Metrics API Lambda (queries CloudWatch, returns JSON)
@@ -164,7 +166,7 @@ AWS stakeholder feedback from initial demo presentation:
 - [ ] Deploy to S3 + CloudFront (static hosting with HTTPS)
 - [ ] Add UI resources to CDK stack
 
-### Task 13: Demo Script Simplification
+### Task 12: Demo Script Simplification
 
 - [ ] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
 - [ ] Prepare business impact talking points (cost savings, latency reduction)
@@ -175,7 +177,7 @@ AWS stakeholder feedback from initial demo presentation:
 
 ---
 
-## 🔧 AgentCore CLI Reference (for Task 10 Automation)
+## 🔧 AgentCore CLI Reference (for Task 10 CDK CodeBuild)
 
 Non-interactive commands used from EC2 that will be automated via CodeBuild:
 

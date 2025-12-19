@@ -48,11 +48,33 @@ This application provides developers and AWS customers with a concrete, measurab
 
 ### Prerequisites
 
-- AWS Account with Bedrock access (Sonnet 4.0, Sonnet 3.5, Titan Embeddings)
-- AWS Lambda execution role with permissions for Bedrock, ElastiCache, CloudWatch
-- ElastiCache (Valkey) cluster configured
-- AWS CLI configured with appropriate credentials
-- Python 3.12+ (for Strands agents)
+**AWS Account Requirements:**
+- AWS Account with Bedrock model access enabled:
+  - Claude Sonnet 4 (`anthropic.claude-sonnet-4-20250514`)
+  - Claude 3.5 Haiku (`anthropic.claude-3-5-haiku-20241022`)
+  - Titan Embeddings v2 (`amazon.titan-embed-text-v2:0`)
+- IAM permissions to create: Lambda, ElastiCache, CloudWatch, CodeBuild, ECR, IAM roles
+
+**Required Tools:**
+
+| Tool | Version | Install Command | Verify |
+|------|---------|-----------------|--------|
+| AWS CLI | 2.x | [Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) | `aws --version` |
+| Node.js | 18+ | [nodejs.org](https://nodejs.org/) | `node --version` |
+| AWS CDK | 2.x | `npm install -g aws-cdk` | `cdk --version` |
+| Python | 3.12+ | [python.org](https://www.python.org/) | `python3 --version` |
+| Go | 1.21+ | [go.dev](https://go.dev/dl/) (for Lambda builds) | `go version` |
+
+**AWS CLI Configuration:**
+
+```bash
+# Configure credentials (if not already done)
+aws configure --profile semantic-cache-demo
+
+# Set as default for this session
+export AWS_PROFILE=semantic-cache-demo
+export AWS_REGION=us-east-2
+```
 
 ### Running the Application
 
@@ -79,7 +101,7 @@ This application provides developers and AWS customers with a concrete, measurab
    # Via AWS Lambda Console
    # Navigate to semantic-cache-demo-ramp-up-simulator function
    # Click Test tab, use empty payload: {}
-   
+
    # Via AWS CLI
    aws lambda invoke \
      --function-name semantic-cache-demo-ramp-up-simulator \
@@ -265,38 +287,23 @@ Hash:
 ### Task 9: Cache Management Lambda (Eliminate EC2 for Cache Ops)
 
 - [x] Create separate Python Lambda (`cache_management/`) with valkey-glide-sync
-- [x] Implement `health-check` action (ping, DBSIZE, FT._LIST)
+- [x] Implement `health-check` action (ping, DBSIZE, FT.\_LIST)
 - [x] Implement `reset-cache` action (SCAN + DEL for cached keys)
 - [x] Implement `create-index` action (FT.CREATE with HNSW)
 - [x] SAM template with VPC config for ElastiCache access
 - [x] Deploy and test all actions
 
-### Task 10: AgentCore Deployment Automation (Eliminate EC2 for Deploy)
+### Task 10: CDK Consolidation + AgentCore Deployment Automation (Merged)
 
-- [ ] Create CodeBuild project for AgentCore deployment (runs in VPC)
-- [ ] Create buildspec.yaml with `agentcore configure` and `agentcore deploy` commands
-- [ ] Configure non-interactive CLI flags: `--vpc`, `--subnets`, `--security-groups`, `--env`
-- [ ] Add CodeBuild project to CDK/CloudFormation
-- [ ] Create CloudFormation Custom Resource to trigger CodeBuild on stack deploy
-- [ ] Handle environment variables (ELASTICACHE_ENDPOINT, SIMILARITY_THRESHOLD, etc.)
-- [ ] Test end-to-end automated deployment
-
-### Task 11: Infrastructure Consolidation (CDK - Single Command Deploy)
-
-- [ ] Initialize CDK project (TypeScript) in `infrastructure/cdk/`
-- [ ] Create VpcEndpointsStack construct (port existing template)
-- [ ] Create ElastiCacheStack construct (port existing template)
-- [ ] Create AgentCoreStack construct (IAM roles, ECR repo, S3 bucket)
-- [ ] Create DashboardStack construct (with Task 8 enhancements)
-- [ ] Create CacheManagementStack construct (Lambda from Task 9)
-- [ ] Create AgentDeployStack construct (CodeBuild from Task 10)
-- [ ] Create TrafficSimulatorStack construct (port ramp-up-simulator)
+- [x] CodeBuild automation for AgentCore deployment (eliminates EC2 jump host)
+- [x] CDK project initialized with ElastiCache and AgentCore stacks
+- [ ] Complete CDK migration for remaining stacks
 - [ ] Create unified `./deploy.sh` script (`cdk bootstrap && cdk deploy --all`)
 - [ ] Create unified `./teardown.sh` script (`cdk destroy --all`)
 - [ ] Archive legacy CloudFormation to `infrastructure/cloudformation-legacy/`
 - [ ] Update README with single-command deployment instructions
 
-### Task 12: Simple Demo UI
+### Task 11: Simple Demo UI
 
 - [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
 - [ ] Create Metrics API Lambda (queries CloudWatch, returns JSON)
@@ -307,7 +314,7 @@ Hash:
 - [ ] Deploy to S3 + CloudFront (static hosting with HTTPS)
 - [ ] Add UI resources to CDK stack
 
-### Task 13: Demo Script Simplification
+### Task 12: Demo Script Simplification
 
 - [ ] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
 - [ ] Prepare business impact talking points (cost savings, latency reduction)
@@ -423,12 +430,12 @@ valkey-semantic-cache-demo/
 
 The demo is constrained by several AWS service limits:
 
-| Factor | Limit | Impact |
-|--------|-------|--------|
-| **AgentCore InvokeAgentRuntime TPS** | 25 TPS per agent | Primary bottleneck - max 25 concurrent requests |
-| **AgentCore Active Sessions** | 500 concurrent (us-east-2) | Sessions idle for 15 min; requires session pooling |
-| **AgentCore New Session Rate** | 100 TPM per endpoint | Limits new session creation speed |
-| **Cache Miss Latency** | ~5-10 seconds | Slow agent responses during cache priming create backlog |
-| **AWS SDK Rate Limiter** | Built-in retry quota | `failed to get rate limit token` when SDK limiter exhausted |
+| Factor                               | Limit                      | Impact                                                      |
+| ------------------------------------ | -------------------------- | ----------------------------------------------------------- |
+| **AgentCore InvokeAgentRuntime TPS** | 25 TPS per agent           | Primary bottleneck - max 25 concurrent requests             |
+| **AgentCore Active Sessions**        | 500 concurrent (us-east-2) | Sessions idle for 15 min; requires session pooling          |
+| **AgentCore New Session Rate**       | 100 TPM per endpoint       | Limits new session creation speed                           |
+| **Cache Miss Latency**               | ~5-10 seconds              | Slow agent responses during cache priming create backlog    |
+| **AWS SDK Rate Limiter**             | Built-in retry quota       | `failed to get rate limit token` when SDK limiter exhausted |
 
 **Effective throughput**: ~5-6 RPS (~330 requests/min) due to these constraints. All limits are adjustable via AWS Service Quotas.
