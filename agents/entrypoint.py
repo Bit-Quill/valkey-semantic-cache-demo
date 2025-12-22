@@ -236,7 +236,7 @@ def invoke(request):
     and reduce LLM consts during traffic spikes.
 
     Flow:
-    1. Generate 1536-dimensional embedding for incoming request using Titan
+    1. Generate 1024-dimensional embedding for incoming request using Titan
     2. Query ElastiCache (Valkey) vector index with HNSW algorithm
     3. On cache hit (0.85 similarity):
         - Return cached response immediately
