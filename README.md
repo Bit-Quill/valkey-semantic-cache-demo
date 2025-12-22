@@ -299,14 +299,13 @@ Hash:
 
 ### Task 11: Simple Demo UI
 
+- [x] Create Metrics API Lambda (queries CloudWatch, returns JSON)
+- [x] Create API Gateway (POST /start, POST /reset, GET /metrics)
 - [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
-- [ ] Create Metrics API Lambda (queries CloudWatch, returns JSON)
-- [ ] Create API Gateway (POST /start, POST /reset, GET /metrics)
 - [ ] Add polling/auto-refresh logic (every 5s during demo)
-- [ ] Add CloudWatch dashboard iframe for detailed view (optional)
 - [ ] Style for conference projection (large fonts, high contrast)
-- [ ] Deploy to S3 + CloudFront (static hosting with HTTPS)
-- [ ] Add UI resources to CDK stack
+- [ ] Deploy frontend to S3 + CloudFront (or serve from Lambda)
+- [ ] Add UI resources to CDK stack (optional)
 
 ### Task 12: Demo Script Simplification
 
@@ -381,7 +380,8 @@ valkey-semantic-cache-demo/
 │   └── entrypoint.py               # @entrypoint with caching logic
 ├── lambda/
 │   ├── ramp_up_simulator/          # Traffic simulation Lambda (Go)
-│   └── cache_management/           # Cache management Lambda (Python)
+│   ├── cache_management/           # Cache management Lambda (Python)
+│   └── demo_ui_api/                # Demo UI API Lambda (Python)
 ├── infrastructure/
 │   ├── cloudformation/             # Infrastructure as Code
 │   └── elasticache_config/         # Valkey cluster configuration

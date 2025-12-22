@@ -125,25 +125,25 @@ deploy_sam_stack() {
 }
 
 deploy_infrastructure() {
-  print_step "1/7" "ElastiCache Infrastructure"
+  print_step "1/8" "ElastiCache Infrastructure"
   deploy_cf_stack "semantic-cache-demo-infrastructure" "elasticache-stack.yaml"
   echo ""
 }
 
 deploy_vpc_endpoints() {
-  print_step "2/7" "VPC Endpoints"
+  print_step "2/8" "VPC Endpoints"
   deploy_cf_stack "semantic-cache-vpc-endpoints" "vpc-endpoints-stack.yaml"
   echo ""
 }
 
 deploy_agentcore_iam() {
-  print_step "3/7" "AgentCore IAM Roles"
+  print_step "3/8" "AgentCore IAM Roles"
   deploy_cf_stack "semantic-cache-demo-agentcore" "agentcore-stack.yaml"
   echo ""
 }
 
 deploy_agentcore_codebuild() {
-  print_step "4/7" "AgentCore CodeBuild Deployment"
+  print_step "4/8" "AgentCore CodeBuild Deployment"
 
   local elasticache_endpoint=$(aws cloudformation describe-stacks \
     --stack-name "semantic-cache-demo-infrastructure" \
@@ -156,20 +156,26 @@ deploy_agentcore_codebuild() {
 }
 
 deploy_dashboard() {
-  print_step "5/7" "CloudWatch Dashboard"
+  print_step "5/8" "CloudWatch Dashboard"
   deploy_cf_stack "semantic-cache-demo-dashboard" "cloudwatch-dashboard.yaml"
   echo ""
 }
 
 deploy_cache_management() {
-  print_step "6/7" "Cache Management Lambda"
+  print_step "6/8" "Cache Management Lambda"
   deploy_sam_stack "semantic-cache-demo-cache-management" "cache-management.yaml"
   echo ""
 }
 
 deploy_ramp_simulator() {
-  print_step "7/7" "Ramp-up Simulator Lambda"
+  print_step "7/8" "Ramp-up Simulator Lambda"
   deploy_sam_stack "semantic-cache-demo-ramp-simulator" "ramp-up-simulator.yaml"
+  echo ""
+}
+
+deploy_demo_ui_api() {
+  print_step "8/8" "Demo UI API"
+  deploy_sam_stack "semantic-cache-demo-ui-api" "demo-ui-api.yaml"
   echo ""
 }
 
@@ -279,6 +285,7 @@ main() {
   deploy_dashboard
   deploy_cache_management
   deploy_ramp_simulator
+  deploy_demo_ui_api
 
   if [ "$CREATE_INDEX" = true ]; then
     create_vector_index
