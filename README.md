@@ -21,7 +21,7 @@ This application provides developers and AWS customers with a concrete, measurab
 - **Intelligent Cache Layer**: @entrypoint intercepts requests before agent invocation, returning cached responses in <100ms
 - **Agent Tooling**: OrderTrackingAgent uses decorated tools to check order status and delivery information
 - **Real-time Metrics**: CloudWatch Dashboard visualizes latency reduction, cost savings, cache efficiency, and match scores
-- **Traffic Simulation**: Lambda-based ramp-up simulator (1 → 11 requests/second over 180 seconds)
+- **Traffic Simulation**: Lambda-based ramp-up simulator (1 → 7 requests/second over 240 seconds)
 - **Conference-Ready**: Live metrics suitable for projection, optional cache reset between demos
 
 ## 🏗️ Architecture
@@ -31,7 +31,7 @@ This application provides developers and AWS customers with a concrete, measurab
 ### Data Flow
 
 1. **Client** initiates request via **API Gateway** to **Ramp-up Simulator** (Lambda)
-2. **Lambda** gradually increases throughput (1 → 11 requests/second over 180 seconds)
+2. **Lambda** gradually increases throughput (1 → 7 requests/second over 240 seconds)
 3. **@entrypoint** generates Titan embedding and queries **ElastiCache** vector index
 4. **Cache Hit (≥0.80 similarity)**:
    - Returns cached response immediately (<100ms)
@@ -262,7 +262,7 @@ Hash:
 
 ### Task 7: Simulation & Presentation Layer
 
-- [x] Ramp-up Lambda implementation (1 → 11 requests/second over 180s)
+- [x] Ramp-up Lambda implementation (1 → 7 requests/second over 240s)
 - [x] Go-based Lambda with deterministic question selection
 - [x] S3-based seed questions (50 base scenarios + 450 variations)
 - [x] SAM template with IAM policies for deployment
@@ -320,11 +320,11 @@ Hash:
 
 1. **Fresh Start**: Show CloudWatch Dashboard (all metrics at zero)
 2. **Ramp-up Simulation**: Invoke Lambda via AWS Console or CLI
-   - Linear ramp: 1 → 11 req/s over 180 seconds (~1,080 total requests)
-   - First 90s: Base questions prime the cache
-   - Second 90s: Variations hit cache (80%+ hit rate)
+   - Linear ramp: 1 → 7 req/s over 240 seconds (~960 total requests)
+   - First 30s: Base questions prime the cache
+   - Remaining 210s: Variations hit cache (80%+ hit rate)
 3. **Live Metrics**: CloudWatch Dashboard shows real-time results
-   - Cache hit ratio: 45% → 90% in 1 minute
+   - Cache hit ratio: 45% → 90% in 2 minutes
    - Average cache hit latency: ~90ms (vs. 2-3s for full agent chain)
    - Cost savings: ~$2.33 per 30 minutes of traffic
    - Total cache hits: 600+ requests served from cache
@@ -353,8 +353,8 @@ CLOUDWATCH_NAMESPACE=SemanticSupportDesk
 
 ```env
 RAMP_START_RPS=1
-RAMP_END_RPS=11
-RAMP_DURATION_SECONDS=180
+RAMP_END_RPS=7
+RAMP_DURATION_SECONDS=240
 REQUEST_TEMPLATES_PATH=./templates/requests.json
 ```
 
