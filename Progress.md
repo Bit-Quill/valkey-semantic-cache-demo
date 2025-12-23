@@ -93,7 +93,7 @@ AWS stakeholder feedback from initial demo presentation:
 
 ### Task 7: Simulation & Presentation
 
-- [x] Ramp-up Lambda implementation (Go-based, 1→7 req/s over 240s)
+- [x] Ramp-up Lambda implementation (Go-based, 1→50 req/s over 60s)
 - [x] S3-based seed questions (50 base scenarios + 450 variations)
 - [x] SAM template with IAM policies for deployment
 - [x] Deterministic question selection for consistent cache priming
@@ -208,7 +208,7 @@ agentcore deploy \
 
 ## 🎉 Recent Accomplishments (2025-12-13)
 
-- **Traffic Simulator**: Implemented Go-based Lambda with linear ramp-up (1→7 req/s over 240s)
+- **Traffic Simulator**: Implemented Go-based Lambda with linear ramp-up (1→50 req/s over 60s)
 - **Deterministic Caching**: First 30s cycles through base questions (cache priming), second 30s uses variations (cache hits)
 - **Session Management**: Optimized session pooling (25 sessions) to balance metrics batching and collision avoidance
 - **Rate Limiting**: Added semaphore (50 max concurrent) to prevent Bedrock AgentCore API throttling
