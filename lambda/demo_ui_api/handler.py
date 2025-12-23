@@ -61,6 +61,14 @@ def get_metrics() -> dict:
                 "Stat": "Sum",
             },
         },
+        {
+            "Id": "paid",
+            "MetricStat": {
+                "Metric": {"Namespace": NAMESPACE, "MetricName": "CostPaid"},
+                "Period": 1800,
+                "Stat": "Sum",
+            },
+        },
     ]
 
     resp = cloudwatch.get_metric_data(
@@ -76,10 +84,14 @@ def get_metrics() -> dict:
     total = results.get("total", 0)
     hit_rate = (hits / total * 100) if total > 0 else 0
 
+    savings = results.get("savings", 0)
+    paid = results.get("paid", 0)
+    cost_reduction = (savings / (savings + paid) * 100) if (savings + paid) > 0 else 0
+
     return {
         "cacheHitRate": round(hit_rate, 1),
         "avgLatencyMs": round(results.get("latency", 0), 1),
-        "costSavings": round(results.get("savings", 0), 4),
+        "costReduction": round(cost_reduction, 1),
         "totalRequests": int(total),
     }
 
