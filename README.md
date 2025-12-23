@@ -316,6 +316,14 @@ Hash:
 - [ ] Practice run with timing (ensure < 5 minutes)
 - [ ] Update SCRIPT.md with new simplified version
 
+### Task 13: Multi-Runtime Scaling (Optional)
+
+- [ ] Deploy second AgentCore runtime for increased throughput
+- [ ] Configure Application Load Balancer (ALB) for WebSocket support
+- [ ] Update ramp-up simulator to target ALB endpoint
+- [ ] Test combined 50 TPS capacity (25 TPS × 2 runtimes)
+- [ ] Document multi-AZ deployment pattern
+
 ## 🎪 Conference Demo Flow
 
 1. **Fresh Start**: Show CloudWatch Dashboard (all metrics at zero)
