@@ -123,12 +123,12 @@
       try {
         await fetch(`${API}/start`, { method: 'POST' });
         if (!polling) {
-          polling = setInterval(fetchMetrics, 5000);
+          polling = setInterval(fetchMetrics, 3000);
         }
         setTimeout(() => {
           document.getElementById('status').textContent = 'Demo complete';
           document.getElementById('status').className = 'status';
-        }, 300000);
+        }, 360000);
       } catch (e) {
         document.getElementById('status').textContent = 'Error starting demo';
       }
