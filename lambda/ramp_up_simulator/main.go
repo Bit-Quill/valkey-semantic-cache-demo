@@ -172,13 +172,13 @@ func invokeAgentCore(ctx context.Context, question string, requestIndex int) err
 func handleRequest(ctx context.Context, req LambdaRequest) (LambdaResponse, error) {
 	// Set defaults
 	if req.RampDurationSecs == 0 {
-		req.RampDurationSecs = 180
+		req.RampDurationSecs = 240
 	}
 	if req.RampStartRPS == 0 {
 		req.RampStartRPS = 1
 	}
 	if req.RampEndRPS == 0 {
-		req.RampEndRPS = 11
+		req.RampEndRPS = 7
 	}
 
 	// Load questions from S3
