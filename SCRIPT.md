@@ -1,314 +1,240 @@
 # Retail Support Desk - Semantic Caching Demo Script
 
-**Total Duration**: ~5-6 minutes  
-**Audience**: Developers, Solutions Architects, AWS customers interested in AI cost optimization
+**Total Duration**: ~5 minutes  
+**Audience**: Developers, Solutions Architects, business decision makers  
+**Format**: Pre-recorded with fast-forward during simulation (3-4x speed)
 
 ---
 
 ## Pre-Demo Checklist
 
-### AWS Console Tabs (Open in Browser)
+- [ ] Demo UI open in browser: `frontend/index.html` (or hosted URL)
+- [ ] CloudWatch Dashboard open: `semantic-cache-demo` (set to **15-minute window**)
+- [ ] Code editor with `agents/` directory open
+- [ ] Cache reset completed (click "Reset Cache" in UI, verify metrics show zeros)
 
-- [ ] Lambda Console → `semantic-cache-demo-ramp-up-simulator`
-- [ ] CloudWatch Dashboard → `semantic-cache-demo` (set to **15-minute window**)
-- [ ] CloudWatch Logs → `/aws/lambda/semantic-cache-demo-ramp-up-simulator`
+---
 
-### Terminal Sessions Ready
+## Part 1: The Problem (0:00 - 0:45)
 
-- [ ] SSH session to EC2 jump host:
+### Opening
 
-  ```bash
-  ssh -i ~/.ssh/semantic-cache-demo-key.pem ec2-user@18.221.90.67
-  ```
+> "Imagine it's Black Friday. Your AI-powered customer support is handling thousands of questions per minute. Customers are asking similar things: 'Where's my order?', 'What's my delivery status?', 'When will my package arrive?'"
 
-### Verify & Reset
+> "Each question costs money - every call to the AI model has a price. And customers are waiting 5-10 seconds for each response."
+
+### The Challenge
+
+> "Here's the problem: **many of these questions are essentially the same**, just worded differently. But without smart caching, you're paying full price and full latency for every single one."
+
+---
+
+## Part 2: The Solution (0:45 - 1:15)
+
+### Semantic Caching Explained
+
+> "What if your system could recognize that 'Where's my package?' and 'Can you track my order?' are asking the same thing?"
+
+> "That's semantic caching. Instead of matching exact words, we match **meaning**. When a similar question comes in, we return the cached answer instantly - no AI call needed."
+
+### Show Architecture Diagram (briefly)
+
+> "Here's how it works:"
+> 1. "Customer question comes in"
+> 2. "We check: have we seen something similar before?"
+> 3. "If yes - instant response from cache, under 100 milliseconds"
+> 4. "If no - we call the AI, get the answer, and cache it for next time"
+
+> "The semantic matching happens in ElastiCache with Valkey - it understands the **meaning** of questions using vector search."
+
+---
+
+## Part 3: Infrastructure & Deployment (1:15 - 1:45)
+
+### Single-Command Deployment
+
+> "This entire demo is reproducible with a single command."
 
 ```bash
-# On EC2 - run the reset script
-./scripts/reset-cache.sh
+./deploy.sh --all
 ```
 
-### Files Ready
+> "This deploys 8 CloudFormation/SAM stacks: VPC infrastructure, ElastiCache cluster, AgentCore IAM roles, CodeBuild for agent deployment, CloudWatch dashboard, cache management Lambda, traffic simulator, and the demo UI API."
 
-- [ ] Architecture diagram: `semantic_support_desk_arch.png`
-- [ ] Code editor with project open
+> "Everything is infrastructure-as-code. Clone the repo, run one command, and you have the full demo running in your account."
 
 ---
 
-## Part 1: Introduction (0:00 - 0:30)
+## Part 4: Code Walkthrough (1:45 - 3:00)
 
-### Greeting
+### 4.1 Vector Index Creation
 
-> "Hi, I'm Vasile from the ElastiCache/Valkey Agentic AI integration team. Today I'll show how semantic caching with ElastiCache Valkey dramatically reduces AI costs and latency for a retail support desk handling Black Friday-level traffic."
-
-### Architecture Overview (Show Diagram)
-
-Walk through quickly:
-
-1. **Lambda Simulator** → generates realistic traffic (1→11 req/s over 3 minutes)
-2. **@entrypoint** → generates Titan embedding, queries ElastiCache vector index
-3. **Cache Hit** → returns cached response in ~100ms
-4. **Cache Miss** → invokes SupportAgent (Claude Sonnet 4) → may delegate to OrderTrackingAgent → caches response
-5. **CloudWatch** → real-time metrics visualization
-
-> "Key point: this runs in VPC mode because ElastiCache doesn't support public endpoints. The EC2 jump host lets us access the cache for management."
-
----
-
-## Part 2: Project Structure (0:30 - 1:00)
-
-```
-valkey-semantic-cache-demo/
-├── agents/           # uv project - Python agents (Bedrock AgentCore + Strands framework)
-├── lambda/           # Go-based traffic simulator
-├── infrastructure/   # CloudFormation templates
-└── scripts/          # Deployment automation
-```
-
-> "The agents directory is a uv project with the Strands framework. Lambda is Go for efficient concurrency. Infrastructure is all CloudFormation."
-
----
-
-## Part 3: Code Walkthrough (1:00 - 2:00)
-
-### 3.1 Entrypoint - Cache Decision Logic
-
-Open `agents/entrypoint.py`, show the `invoke` function (~line 230):
+Open `infrastructure/elasticache_config/create_vector_index.py`:
 
 ```python
-if cache_request_id and similarity >= SIMILARITY_THRESHOLD:
-    cached = get_cached_response(cache_request_id)
-    if cached:
-        # Cache HIT - return in ~100ms
-        emit_metrics(cached=True, latency_ms=latency, similarity=similarity, cost_avoided=cost_avoided)
-        return cached["response_text"]
+FT.CREATE idx:requests ON HASH PREFIX 1 request:vector:
+SCHEMA
+    embedding VECTOR HNSW 10 TYPE FLOAT32 DIM 1024 DISTANCE_METRIC COSINE
 ```
 
-> "The threshold check happens here. If similarity exceeds 80%, we return the cached response and emit metrics to CloudWatch. Otherwise, we invoke the full agent chain."
+> "This creates a vector index in ElastiCache. HNSW is the algorithm - it enables fast similarity search. The key number is 1024 dimensions - that's the size of our embeddings."
 
-### 3.2 Multi-Agent Orchestration
+### 4.2 Embedding Generation
 
-Open `agents/support_agent.py`:
+Open `agents/entrypoint.py`, show `generate_embedding()` (~line 85):
 
 ```python
-support_agent = Agent(
-    model="us.anthropic.claude-sonnet-4-20250514-v1:0",
-    tools=[lookup_order_tracking],
+response = bedrock.invoke_model(
+    modelId="amazon.titan-embed-text-v2:0",
+    body=json.dumps({"inputText": text, "dimensions": EMBEDDING_DIM})  # 1024
 )
 ```
 
-> "SupportAgent can delegate to OrderTrackingAgent via the lookup_order_tracking tool for order-specific queries."
+> "When a question comes in, we convert it to a 1024-dimensional vector using Titan Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
 
-### 3.3 Tool Decorators
+### 4.3 Cache Lookup
 
-Open `agents/order_tracking_agent.py`:
+Show `search_similar_request()` (~line 110):
 
 ```python
-@tool
-def check_order_status(order_id: str) -> dict:
-    """Check the current status of an order by order ID."""
+FT.SEARCH idx:requests "*=>[KNN 1 @embedding $query_vec AS score]"
 ```
 
-> "The @tool decorator exposes functions to the agent - modular and testable."
+> "We search the index for the nearest neighbor - the most similar cached question. The score tells us how close the match is."
+
+### 4.4 The Decision Point
+
+Show the key `if` statement in `invoke()` (~line 230):
+
+```python
+if cache_request_id and similarity >= SIMILARITY_THRESHOLD:  # 0.80
+    cached = get_cached_response(cache_request_id)
+    if cached:
+        # Cache HIT - return instantly
+        emit_metrics(cached=True, latency_ms=latency, cost_avoided=cost_avoided)
+        return cached["response_text"]
+
+# Cache MISS - invoke full agent chain (expensive)
+response = support_agent(request_text)
+cache_response(request_text, response, embedding)
+```
+
+> "This is where the magic happens. If similarity exceeds our threshold, we return the cached response in milliseconds. Otherwise, we invoke the full multi-agent chain - SupportAgent, potentially OrderTrackingAgent - which takes 5-10 seconds and costs money."
 
 ---
 
-## Part 4: Infrastructure (2:00 - 2:30)
+## Part 5: Live Demo (3:00 - 4:30)
 
-### Show Stack Outputs (AWS CLI or Console)
+### Reset and Prepare (3:00)
 
-```bash
-# ElastiCache stack
-export AWS_PROFILE=semantic-cache-demo
+In the Demo UI:
 
-aws cloudformation describe-stacks --stack-name semantic-cache-demo-infrastructure \
-  --query 'Stacks[0].Outputs' --output table --region us-east-2
+1. Click **Reset Cache**
+2. Verify all metrics show zero
 
-# AgentCore stack
-aws cloudformation describe-stacks --stack-name semantic-cache-demo-agentcore \
-  --query 'Stacks[0].Outputs' --output table --region us-east-2
-```
+> "Starting fresh - empty cache."
 
-> "The ElastiCache stack provisions the Valkey cluster. The AgentCore stack creates IAM roles, ECR repository, S3 bucket, and VPC endpoints - without those endpoints, the agent couldn't reach ElastiCache or emit CloudWatch metrics from within the VPC."
+### Start the Simulation (3:10)
 
-### Vector Index Creation
+Click **Start Demo**
 
-```bash
-# On EC2 - create HNSW index for semantic search
-cd ~/valkey-semantic-cache-demo/agents
-uv run python ../infrastructure/elasticache_config/create_vector_index.py
-```
+> "This triggers a traffic simulation - about 1,000 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
 
-> "This creates the HNSW vector index with cosine distance. The dimension (1024) comes from `cache_constants.py` - matching what Titan Embeddings generates in `entrypoint.py`."
+### Watch the Metrics [FAST FORWARD x3-4] (3:10 - 4:15)
 
----
+*[Recording note: Fast-forward through the 3-minute simulation, narrate over the sped-up footage]*
 
-## Part 5: Deployment (2:30 - 3:00)
+Point to each KPI card as it updates:
 
-### AgentCore Configuration
+**Cache Hit Rate**
+> "Watch the hit rate climb as the cache warms up. It starts at zero, then rises as similar questions start matching cached responses."
 
-On EC2, show the configuration command (Ctrl+R → `agentcore configure`, then Ctrl+X Ctrl+E to show full command).
+**Avg Latency**
+> "Cached responses come back in about 100 milliseconds - compared to 5-10 seconds for a full AI call."
 
-Then show the network mode:
+**Cost Reduction**
+> "This shows the percentage of AI costs we're avoiding through caching."
 
-```bash
-grep -A 5 "network_configuration" agents/.bedrock_agentcore.yaml
-```
+**Total Requests**
+> "The count of successfully processed requests."
 
-```yaml
-network_configuration:
-  network_mode: VPC # Required for ElastiCache access
-```
+### Narrate Key Moments
 
-> "VPC mode is required because ElastiCache doesn't support public endpoints."
+> "First 30 seconds - we're priming the cache with base questions, so hit rate is low."
 
-### AgentCore Deploy
+> "Now variations are coming in - the cache recognizes them as similar. Hit rate climbing..."
 
-```bash
-# Deploy agent with environment variables for cache connection
-agentcore deploy \
-  --env ELASTICACHE_ENDPOINT=sevoxy28zhyaiz6.xkacez.ng.0001.use2.cache.amazonaws.com \
-  --env ELASTICACHE_PORT=6379 \
-  --env SIMILARITY_THRESHOLD=0.80 \
-  --env EMBEDDING_MODEL=amazon.titan-embed-text-v2:0 \
-  --env AWS_REGION=us-east-2
-```
-
-### Lambda Deployment
-
-```bash
-# Build & deploy
-GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o bootstrap main.go
-sam deploy --template-file ramp-up-simulator.yaml --stack-name semantic-cache-demo-ramp-simulator
-```
+> "We're seeing [X]% of requests served from cache - that's [X]% of AI calls we didn't have to make."
 
 ---
 
-## Part 6: Live Demo (3:00 - 6:00)
+## Part 6: Results & Takeaways (4:30 - 5:15)
 
-### Start Simulation (3:00)
+### Summarize the Numbers
 
-In Lambda Console:
+> "Here's what we achieved:"
+> - "**Cache Hit Rate**: [X]% of questions answered from cache"
+> - "**Latency**: ~100ms cached vs 5-10 seconds uncached - 50-100x faster"
+> - "**Cost Reduction**: [X]% savings on AI inference costs"
 
-1. Navigate to `semantic-cache-demo-ramp-up-simulator`
-2. Click **Test** → empty payload `{}` → **Test**
+### Business Impact
 
-> "This triggers a 3-minute ramp-up. While it runs, let me show you the code we just discussed in more detail..."
+> "For production workloads, this means:"
+> - "**Faster customer experience** - instant responses for common questions"
+> - "**Lower costs** - pay only for unique questions"
+> - "**Better scalability** - cache absorbs traffic spikes"
 
-### During Run: Deeper Code Review (3:00 - 5:30)
+### Closing
 
-Use this time to:
-
-- Show more of `entrypoint.py` (embedding generation, vector search)
-- Show `seed-questions.json` structure (50 base + 450 variations)
-- Answer audience questions
-
-### Check Logs Briefly (5:00)
-
-Tail Lambda logs - show a few lines:
-
-```
-INFO: Sent request 150/990, successes: 89, failures: 61
-```
-
-> "Some failures are expected - AgentCore has a 25 TPS limit, and the AWS SDK rate limiter can exhaust its retry quota. These are known constraints, not cache issues."
-
-### Confirm Completion (5:30)
-
-Lambda output:
-
-```json
-{
-  "total_requests": 990,
-  "successes": 661,
-  "failures": 329,
-  "message": "Ramp-up complete: 661/990 successful"
-}
-```
-
-### Analyze Dashboard (5:30 - 6:00)
-
-Navigate to CloudWatch Dashboard:
-
-1. **Latency** → "Cache hits: ~115ms. Misses: 5-15 seconds. 50-100x faster."
-2. **Cache Hit Ratio** → "Starts at 0%, climbs to 95%+ as cache warms."
-3. **Cost Savings** → "$1.49 saved in 3 minutes by avoiding redundant LLM calls."
-4. **Similarity Scores** → "Most hits at 85-95% - semantically equivalent questions."
+> "Semantic caching with ElastiCache Valkey lets you handle AI workloads at scale - faster responses, lower costs, and the ability to handle traffic surges like Black Friday."
 
 ---
 
-## Key Takeaways
+## Q&A Talking Points
 
-> "Semantic caching addresses three challenges: **cost** (avoid redundant LLM calls), **latency** (100ms vs 5-15s), and **scalability** (cache absorbs repeated queries during traffic spikes)."
+**Q: How does it know questions are similar?**
+> "We use Titan Embeddings to convert questions into 1024-dimensional vectors. Similar meanings produce vectors that are close together in that space. We measure closeness using cosine similarity."
+
+**Q: What about accuracy? Will it return wrong answers?**
+> "We set a similarity threshold at 0.80. Only questions that are truly similar get cached responses. If there's any doubt, it goes to the full AI chain."
+
+**Q: What does this cost to run?**
+> "The ElastiCache cluster costs about $38/month. The AI cost savings typically exceed that quickly under real traffic."
+
+**Q: Can this work with other AI models?**
+> "Yes - the cache layer is model-agnostic. We use Claude via Bedrock here, but any embedding model + LLM combination works."
+
+**Q: Why are there some failures in the simulation?**
+> "AgentCore has a 25 TPS limit per agent. At peak load (11 RPS), some requests get throttled. The recommended solution is horizontal scaling - deploy multiple AgentCore runtimes behind an Application Load Balancer. ALB supports WebSocket connections that AgentCore uses. With two runtimes, you'd have 50 TPS capacity."
 
 ---
 
 ## Fallback Plan
 
-| Issue                  | Quick Fix                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------- |
-| Lambda fails           | Check IAM: `aws lambda get-function-configuration --function-name semantic-cache-demo-ramp-up-simulator` |
-| Cache connection fails | On EC2: `redis6-cli -h $CACHE_HOST PING`                                                                 |
-| Metrics don't appear   | Verify namespace `SemanticSupportDesk`, wait 1-2 min delay                                               |
-| Low hit ratio          | Cache not reset properly, or threshold needs adjustment                                                  |
+| Issue | Quick Fix |
+|-------|-----------|
+| UI not updating | Refresh browser, check API URL |
+| Metrics stay at zero | Wait 1-2 minutes for CloudWatch delay |
+| Demo button unresponsive | Use CloudWatch Dashboard as backup |
 
-**Emergency**: Keep screenshots of successful runs as backup.
-
----
-
-## Q&A Preparation
-
-**Q: Why 80% similarity threshold?**
-
-> "Tested various values. 80% captures paraphrased questions while avoiding false positives."
-
-**Q: What's the cache storage cost?**
-
-> "ElastiCache t4g.small ~$38/month. LLM savings far exceed cache costs."
-
-**Q: How do you handle cache invalidation?**
-
-> "This demo uses TTL-based expiration. Production would add invalidation triggers when data changes."
-
-**Q: Can this work with other LLMs?**
-
-> "Yes, the cache layer is model-agnostic. We use Claude via AWS Bedrock for native integration, but any embedding model + LLM works."
-
-**Q: What about multi-turn conversations?**
-
-> "We deliberately excluded LTM/STM from this AgentCore runtime to focus on semantic caching. For conversations, strategies include chunking conversation context into the embedding, or using RAG with ElastiCache as the vector store for conversation history."
-
-**Q: What are the throughput limits?**
-
-> "AgentCore: 25 TPS per agent, 500 concurrent sessions. AWS SDK rate limiter also applies - it has a built-in retry quota that can exhaust under sustained load, causing 'failed to get rate limit token' errors. All limits adjustable via Service Quotas."
-
-**Q: Why Go for Lambda instead of Python?**
-
-> "Go's goroutines handle high-throughput simulation efficiently. Faster cold starts too."
-
-**Q: How does HNSW compare to other algorithms?**
-
-> "HNSW offers sub-millisecond queries with good recall. Trade-off: higher memory, slower index builds vs flat indexes."
+**Emergency**: Keep screenshots of a successful run as backup.
 
 ---
 
 ## Timing Summary
 
-| Part                 | Start | Duration   | Content                                        |
-| -------------------- | ----- | ---------- | ---------------------------------------------- |
-| 1. Introduction      | 0:00  | 30s        | Greeting, architecture overview                |
-| 2. Project Structure | 0:30  | 30s        | Directory layout                               |
-| 3. Code Walkthrough  | 1:00  | 60s        | entrypoint, agents, tools                      |
-| 4. Infrastructure    | 2:00  | 30s        | Stack outputs                                  |
-| 5. Deployment        | 2:30  | 30s        | AgentCore config, Lambda deploy                |
-| 6. Live Demo         | 3:00  | 180s       | Start sim → code review during run → dashboard |
-| **Total**            |       | **~6 min** |                                                |
+| Part | Start | Duration | Content |
+|------|-------|----------|---------|
+| 1. The Problem | 0:00 | 45s | Black Friday scenario, cost/latency challenge |
+| 2. The Solution | 0:45 | 30s | Semantic caching concept, architecture |
+| 3. Infrastructure | 1:15 | 30s | Single-command deployment, CloudFormation |
+| 4. Code Walkthrough | 1:45 | 75s | Index, embeddings, lookup, decision logic |
+| 5. Live Demo | 3:00 | 90s | UI demo with fast-forward |
+| 6. Results | 4:30 | 45s | Summary, business impact, closing |
+| **Total** | | **~5:15** | |
 
 ---
 
-## Post-Demo Reset
+## Post-Demo
 
-```bash
-# On EC2 jump host
-./scripts/reset-cache.sh
-```
+Click **Reset Cache** in the UI to prepare for the next demo.
