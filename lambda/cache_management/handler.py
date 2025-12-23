@@ -59,7 +59,13 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, str]:
                     if cursor == "0":
                         break
             deleted += client.delete(["metrics:global"])
-            return {"message": f"cache reset - deleted {deleted} keys"}
+            
+            # Verification info
+            dbsize = client.dbsize()
+            indexes = client.custom_command(cast(list[TEncodable], ["FT._LIST"]))
+            print(f"Cache reset complete - deleted {deleted} keys")
+            print(f"Verification: DB Size: {dbsize}, Index: {indexes}")
+            return {"message": f"cache reset - deleted {deleted} keys, dbsize: {dbsize}"}
 
         elif action == "create-index":
             # fmt: off
