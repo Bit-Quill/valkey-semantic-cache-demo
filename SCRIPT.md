@@ -1,6 +1,6 @@
 # Retail Support Desk - Semantic Caching Demo Script
 
-**Total Duration**: ~5 minutes  
+**Total Duration**: ~5:35  
 **Audience**: Developers, Solutions Architects, business decision makers  
 **Format**: Pre-recorded with fast-forward during simulation (3-4x speed)
 
@@ -15,7 +15,11 @@
 
 ---
 
-## Part 1: The Problem (0:00 - 0:45)
+## Part 1: The Problem (0:00 - 0:55)
+
+### Introduction & Preview
+
+> "Hi, I'm Vasile from the ElastiCache Agentic team. Today I'll show you how semantic caching with ElastiCache Valkey can dramatically reduce costs and latency for AI workloads. We'll look at the problem, the solution, walk through the code, and then see it in action with a live demo."
 
 ### Opening
 
@@ -29,7 +33,7 @@
 
 ---
 
-## Part 2: The Solution (0:45 - 1:15)
+## Part 2: The Solution (0:55 - 1:25)
 
 ### Semantic Caching Explained
 
@@ -41,7 +45,7 @@
 
 > "Here's how it works:"
 > 1. "Customer question comes in"
-> 2. "We check: have we seen something similar before?"
+> 2. "We check: have we seen something similar before? Similar enough to meet our similarity threshold?"
 > 3. "If yes - instant response from cache, under 100 milliseconds"
 > 4. "If no - we call the AI, get the answer, and cache it for next time"
 
@@ -49,11 +53,11 @@
 
 ---
 
-## Part 3: Infrastructure & Deployment (1:15 - 1:45)
+## Part 3: Infrastructure & Deployment (1:25 - 1:55)
 
 ### Single-Command Deployment
 
-> "This entire demo is reproducible with a single command."
+> "This entire setup is reproducible with a single command."
 
 ```bash
 ./deploy.sh --all
@@ -65,7 +69,7 @@
 
 ---
 
-## Part 4: Code Walkthrough (1:45 - 3:00)
+## Part 4: Code Walkthrough (1:55 - 3:20)
 
 ### 4.1 Vector Index Creation
 
@@ -77,7 +81,7 @@ SCHEMA
     embedding VECTOR HNSW 10 TYPE FLOAT32 DIM 1024 DISTANCE_METRIC COSINE
 ```
 
-> "This creates a vector index in ElastiCache. HNSW is the algorithm - it enables fast similarity search. The key number is 1024 dimensions - that's the size of our embeddings."
+> "This creates a vector index in ElastiCache. HNSW is the algorithm - it enables fast similarity search. The key number is 1024 dimensions - this must match the dimension size we use when generating embeddings for search queries."
 
 ### 4.2 Embedding Generation
 
@@ -119,28 +123,27 @@ response = support_agent(request_text)
 cache_response(request_text, response, embedding)
 ```
 
-> "This is where the magic happens. If similarity exceeds our threshold, we return the cached response in milliseconds. Otherwise, we invoke the full multi-agent chain - SupportAgent, potentially OrderTrackingAgent - which takes 5-10 seconds and costs money."
+> "This is where the magic happens. If similarity exceeds our threshold - 0.80 in this demo - we return the cached response in milliseconds. Otherwise, we invoke the full multi-agent chain - SupportAgent, potentially OrderTrackingAgent - which takes 5-10 seconds and costs money."
+
+> "This threshold is a tuning knob: lower it for more cache hits and cost savings, raise it for stricter matching and accuracy. In production, you might also let users bypass the cache if responses don't fully address their question."
 
 ---
 
-## Part 5: Live Demo (3:00 - 4:30)
+## Part 5: Live Demo (3:20 - 4:40)
 
-### Reset and Prepare (3:00)
+### Confirm Clean State (3:20)
 
 In the Demo UI:
 
-1. Click **Reset Cache**
-2. Verify all metrics show zero
+> "We've reset the cache before starting - all metrics are at zero. Empty cache, fresh start."
 
-> "Starting fresh - empty cache."
-
-### Start the Simulation (3:10)
+### Start the Simulation (3:25)
 
 Click **Start Demo**
 
 > "This triggers a traffic simulation - about 1,000 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
 
-### Watch the Metrics [FAST FORWARD x3-4] (3:10 - 4:15)
+### Watch the Metrics [FAST FORWARD x3-4] (3:25 - 4:25)
 
 *[Recording note: Fast-forward through the 3-minute simulation, narrate over the sped-up footage]*
 
@@ -168,7 +171,7 @@ Point to each KPI card as it updates:
 
 ---
 
-## Part 6: Results & Takeaways (4:30 - 5:15)
+## Part 6: Results & Takeaways (4:40 - 5:35)
 
 ### Summarize the Numbers
 
@@ -186,7 +189,9 @@ Point to each KPI card as it updates:
 
 ### Closing
 
-> "Semantic caching with ElastiCache Valkey lets you handle AI workloads at scale - faster responses, lower costs, and the ability to handle traffic surges like Black Friday."
+> "To recap: we covered the cost and latency challenge of AI workloads, showed how semantic caching solves it by matching meaning rather than exact words, walked through the code - from vector index creation to the cache decision logic - and saw it working live with real traffic."
+
+> "Semantic caching with ElastiCache Valkey lets you handle AI workloads at scale - faster responses, lower costs, and the ability to handle traffic surges like Black Friday. Thanks for watching!"
 
 ---
 
@@ -225,13 +230,13 @@ Point to each KPI card as it updates:
 
 | Part | Start | Duration | Content |
 |------|-------|----------|---------|
-| 1. The Problem | 0:00 | 45s | Black Friday scenario, cost/latency challenge |
-| 2. The Solution | 0:45 | 30s | Semantic caching concept, architecture |
-| 3. Infrastructure | 1:15 | 30s | Single-command deployment, CloudFormation |
-| 4. Code Walkthrough | 1:45 | 75s | Index, embeddings, lookup, decision logic |
-| 5. Live Demo | 3:00 | 90s | UI demo with fast-forward |
-| 6. Results | 4:30 | 45s | Summary, business impact, closing |
-| **Total** | | **~5:15** | |
+| 1. The Problem | 0:00 | 55s | Intro, preview, Black Friday scenario |
+| 2. The Solution | 0:55 | 30s | Semantic caching concept, architecture |
+| 3. Infrastructure | 1:25 | 30s | Single-command deployment, CloudFormation |
+| 4. Code Walkthrough | 1:55 | 85s | Index, embeddings, lookup, threshold tuning |
+| 5. Live Demo | 3:20 | 80s | UI demo with fast-forward |
+| 6. Results | 4:40 | 55s | Summary, recap, business impact |
+| **Total** | | **~5:35** | |
 
 ---
 
