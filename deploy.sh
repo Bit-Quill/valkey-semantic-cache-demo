@@ -5,11 +5,12 @@ set -e
 # Deploys all stacks in the correct order
 
 # Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+BLUE=$'\033[0;34m'
+CYAN=$'\033[1;36m'
+NC=$'\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -210,6 +211,16 @@ print_next_steps() {
   print_header "Deployment Complete!"
 
   echo "All infrastructure stacks deployed successfully."
+  echo ""
+
+  echo -e "${CYAN}Deployed Stacks:${NC}"
+  aws cloudformation list-stacks \
+    --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE \
+    --output table \
+    --query 'StackSummaries[?starts_with(StackName, `semantic-cache`)].[StackName, StackStatus, TemplateDescription]' \
+    --profile "$AWS_PROFILE" \
+    --region "$AWS_REGION" \
+    --color off | while IFS= read -r line; do echo -e "${CYAN}${line}${NC}"; done
   echo ""
 
   if [ "$DEPLOY_AGENT" = false ]; then
