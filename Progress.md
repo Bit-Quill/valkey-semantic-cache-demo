@@ -1,7 +1,7 @@
 # Retail Support Desk - Semantic Caching Demo - Progress Tracker
 
-**Last Updated**: 2025-12-22  
-**Current Phase**: Task 11 In Progress - Demo UI API deployed
+**Last Updated**: 2026-01-02  
+**Current Phase**: Task 12 In Progress - Demo video recording
 
 ---
 
@@ -159,20 +159,20 @@ AWS stakeholder feedback from initial demo presentation:
 - [x] Create Metrics API Lambda (queries CloudWatch, returns JSON)
 - [x] Create API Gateway (POST /start, POST /reset, GET /metrics)
 - [x] Add to deploy.sh (step 8/8)
-- [ ] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
-- [ ] Add polling/auto-refresh logic (every 5s during demo)
-- [ ] Style for conference projection (large fonts, high contrast)
+- [x] Create static HTML/JS page (Start, Reset buttons, 4 KPI cards)
+- [x] Add polling/auto-refresh logic (every 5s during demo)
+- [x] Style for conference projection (large fonts, high contrast)
 - [ ] Deploy frontend to S3 + CloudFront (or serve from Lambda)
 - [ ] Add UI resources to CDK stack (optional)
 
 ### Task 12: Demo Script Simplification
 
-- [ ] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
-- [ ] Prepare business impact talking points (cost savings, latency reduction)
+- [x] Create 5-minute script outline (Problem → Solution → Live Demo → Results)
+- [x] Prepare business impact talking points (cost savings, latency reduction)
 - [ ] Record fallback demo video (3-minute backup recording)
 - [ ] Create simplified slides (3-4 slides, optional)
 - [ ] Practice run with timing (ensure < 5 minutes)
-- [ ] Update SCRIPT.md with new simplified version
+- [x] Update SCRIPT.md with new simplified version
 
 ---
 
