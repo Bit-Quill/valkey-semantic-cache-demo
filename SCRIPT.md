@@ -44,6 +44,7 @@
 ### Show Architecture Diagram (briefly)
 
 > "Here's how it works:"
+>
 > 1. "Customer question comes in"
 > 2. "We check: have we seen something similar before? Similar enough to meet our similarity threshold?"
 > 3. "If yes - instant response from cache, under 100 milliseconds"
@@ -94,7 +95,7 @@ response = bedrock.invoke_model(
 )
 ```
 
-> "When a question comes in, we convert it to a 1024-dimensional vector using Titan Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
+> "When a question comes in, we convert it to a 1024-dimensional vector using Bedrock Titan Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
 
 ### 4.3 Cache Lookup
 
@@ -123,9 +124,11 @@ response = support_agent(request_text)
 cache_response(request_text, response, embedding)
 ```
 
-> "This is where the magic happens. If similarity exceeds our threshold - 0.80 in this demo - we return the cached response in milliseconds. Otherwise, we invoke the full multi-agent chain - SupportAgent, potentially OrderTrackingAgent - which takes 5-10 seconds and costs money."
+> "This is where the magic happens. If similarity exceeds our threshold - 0.80 in this demo - we return the cached response in milliseconds."
 
 > "This threshold is a tuning knob: lower it for more cache hits and cost savings, raise it for stricter matching and accuracy. In production, you might also let users bypass the cache if responses don't fully address their question."
+
+> "Otherwise, we invoke the full multi-agent chain - SupportAgent, potentially OrderTrackingAgent - this takes 5-10 seconds and costs money."
 
 ---
 
@@ -145,20 +148,24 @@ Click **Start Demo**
 
 ### Watch the Metrics [FAST FORWARD x3-4] (3:25 - 4:25)
 
-*[Recording note: Fast-forward through the 3-minute simulation, narrate over the sped-up footage]*
+_[Recording note: Fast-forward through the 3-minute simulation, narrate over the sped-up footage]_
 
 Point to each KPI card as it updates:
 
 **Cache Hit Rate**
+
 > "Watch the hit rate climb as the cache warms up. It starts at zero, then rises as similar questions start matching cached responses."
 
 **Avg Latency**
+
 > "Cached responses come back in about 100 milliseconds - compared to 5-10 seconds for a full AI call."
 
 **Cost Reduction**
+
 > "This shows the percentage of AI costs we're avoiding through caching."
 
 **Total Requests**
+
 > "The count of successfully processed requests."
 
 ### Narrate Key Moments
@@ -176,6 +183,7 @@ Point to each KPI card as it updates:
 ### Summarize the Numbers
 
 > "Here's what we achieved:"
+>
 > - "**Cache Hit Rate**: [X]% of questions answered from cache"
 > - "**Latency**: ~100ms cached vs 5-10 seconds uncached - 50-100x faster"
 > - "**Cost Reduction**: [X]% savings on AI inference costs"
@@ -183,6 +191,7 @@ Point to each KPI card as it updates:
 ### Business Impact
 
 > "For production workloads, this means:"
+>
 > - "**Faster customer experience** - instant responses for common questions"
 > - "**Lower costs** - pay only for unique questions"
 > - "**Better scalability** - cache absorbs traffic spikes"
@@ -198,29 +207,34 @@ Point to each KPI card as it updates:
 ## Q&A Talking Points
 
 **Q: How does it know questions are similar?**
+
 > "We use Titan Embeddings to convert questions into 1024-dimensional vectors. Similar meanings produce vectors that are close together in that space. We measure closeness using cosine similarity."
 
 **Q: What about accuracy? Will it return wrong answers?**
+
 > "We set a similarity threshold at 0.80. Only questions that are truly similar get cached responses. If there's any doubt, it goes to the full AI chain."
 
 **Q: What does this cost to run?**
+
 > "The ElastiCache cluster costs about $38/month. The AI cost savings typically exceed that quickly under real traffic."
 
 **Q: Can this work with other AI models?**
+
 > "Yes - the cache layer is model-agnostic. We use Claude via Bedrock here, but any embedding model + LLM combination works."
 
 **Q: Why are there some failures in the simulation?**
+
 > "AgentCore has a 25 TPS limit per agent. At peak load (11 RPS), some requests get throttled. The recommended solution is horizontal scaling - deploy multiple AgentCore runtimes behind an Application Load Balancer. ALB supports WebSocket connections that AgentCore uses. With two runtimes, you'd have 50 TPS capacity."
 
 ---
 
 ## Fallback Plan
 
-| Issue | Quick Fix |
-|-------|-----------|
-| UI not updating | Refresh browser, check API URL |
-| Metrics stay at zero | Wait 1-2 minutes for CloudWatch delay |
-| Demo button unresponsive | Use CloudWatch Dashboard as backup |
+| Issue                    | Quick Fix                             |
+| ------------------------ | ------------------------------------- |
+| UI not updating          | Refresh browser, check API URL        |
+| Metrics stay at zero     | Wait 1-2 minutes for CloudWatch delay |
+| Demo button unresponsive | Use CloudWatch Dashboard as backup    |
 
 **Emergency**: Keep screenshots of a successful run as backup.
 
@@ -228,15 +242,15 @@ Point to each KPI card as it updates:
 
 ## Timing Summary
 
-| Part | Start | Duration | Content |
-|------|-------|----------|---------|
-| 1. The Problem | 0:00 | 55s | Intro, preview, Black Friday scenario |
-| 2. The Solution | 0:55 | 30s | Semantic caching concept, architecture |
-| 3. Infrastructure | 1:25 | 30s | Single-command deployment, CloudFormation |
-| 4. Code Walkthrough | 1:55 | 85s | Index, embeddings, lookup, threshold tuning |
-| 5. Live Demo | 3:20 | 80s | UI demo with fast-forward |
-| 6. Results | 4:40 | 55s | Summary, recap, business impact |
-| **Total** | | **~5:35** | |
+| Part                | Start | Duration  | Content                                     |
+| ------------------- | ----- | --------- | ------------------------------------------- |
+| 1. The Problem      | 0:00  | 55s       | Intro, preview, Black Friday scenario       |
+| 2. The Solution     | 0:55  | 30s       | Semantic caching concept, architecture      |
+| 3. Infrastructure   | 1:25  | 30s       | Single-command deployment, CloudFormation   |
+| 4. Code Walkthrough | 1:55  | 85s       | Index, embeddings, lookup, threshold tuning |
+| 5. Live Demo        | 3:20  | 80s       | UI demo with fast-forward                   |
+| 6. Results          | 4:40  | 55s       | Summary, recap, business impact             |
+| **Total**           |       | **~5:35** |                                             |
 
 ---
 
