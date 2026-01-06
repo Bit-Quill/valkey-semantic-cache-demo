@@ -19,7 +19,7 @@
 
 ### Introduction & Preview
 
-> "Hi, I'm Vasile from the ElastiCache Agentic team. Today I'll show you how semantic caching with ElastiCache Valkey can dramatically reduce costs and latency for AI workloads. We'll look at the problem, the solution, walk through the code, and then see it in action with a live demo."
+> "Hi, I'm Vasile from the ElastiCache Agentic team. Today I'll show you how semantic caching with ElastiCache Valkey can dramatically reduce costs and latency for AI workloads. In this presentation we'll look at the problem, the solution, walk through the code, and then see it in action with a live demo."
 
 ### Opening
 
@@ -54,25 +54,9 @@
 
 ---
 
-## Part 3: Infrastructure & Deployment (1:25 - 1:55)
+## Part 3: Code Walkthrough (1:55 - 3:20)
 
-### Single-Command Deployment
-
-> "This entire setup is reproducible with a single command."
-
-```bash
-./deploy.sh --all
-```
-
-> "This deploys 8 CloudFormation/SAM stacks: VPC infrastructure, ElastiCache cluster, AgentCore IAM roles, CodeBuild for agent deployment, CloudWatch dashboard, cache management Lambda, traffic simulator, and the demo UI API."
-
-> "Everything is infrastructure-as-code. Clone the repo, run one command, and you have the full demo running in your account."
-
----
-
-## Part 4: Code Walkthrough (1:55 - 3:20)
-
-### 4.1 Vector Index Creation
+### 3.1 Vector Index Creation
 
 Open `infrastructure/elasticache_config/create_vector_index.py`:
 
@@ -84,7 +68,7 @@ SCHEMA
 
 > "This creates a vector index in ElastiCache. HNSW is the algorithm - it enables fast similarity search. The key number is 1024 dimensions - this must match the dimension size we use when generating embeddings for search queries."
 
-### 4.2 Embedding Generation
+### 3.2 Embedding Generation
 
 Open `agents/entrypoint.py`, show `generate_embedding()` (~line 85):
 
@@ -97,7 +81,7 @@ response = bedrock.invoke_model(
 
 > "When a question comes in, we convert it to a 1024-dimensional vector using Bedrock Titan Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
 
-### 4.3 Cache Lookup
+### 3.3 Cache Lookup
 
 Show `search_similar_request()` (~line 110):
 
@@ -107,7 +91,7 @@ FT.SEARCH idx:requests "*=>[KNN 1 @embedding $query_vec AS score]"
 
 > "We search the index for the nearest neighbor - the most similar cached question. The score tells us how close the match is."
 
-### 4.4 The Decision Point
+### 3.4 The Decision Point
 
 Show the key `if` statement in `invoke()` (~line 230):
 
@@ -132,6 +116,24 @@ cache_response(request_text, response, embedding)
 
 ---
 
+## Part 4: Infrastructure & Deployment (1:25 - 1:55)
+
+> Now let's deploy and watch it work
+
+### Single-Command Deployment
+
+> "This entire setup is reproducible with a single command."
+
+```bash
+./deploy.sh --all
+```
+
+> "This deploys 8 CloudFormation/SAM stacks: VPC infrastructure, ElastiCache cluster, AgentCore IAM roles, CodeBuild for agent deployment, CloudWatch dashboard, cache management Lambda, traffic simulator, and the demo UI API."
+
+> "Everything is infrastructure-as-code. Clone the repo, run one command, and you have the full demo running in your account."
+
+---
+
 ## Part 5: Live Demo (3:20 - 4:40)
 
 ### Confirm Clean State (3:20)
@@ -144,7 +146,7 @@ In the Demo UI:
 
 Click **Start Demo**
 
-> "This triggers a traffic simulation - about 1,000 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
+> "Once we hit the “Start Demo” button, this triggered a traffic simulation - almost 700 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
 
 ### Watch the Metrics [FAST FORWARD x3-4] (3:25 - 4:25)
 
@@ -154,19 +156,19 @@ Point to each KPI card as it updates:
 
 **Cache Hit Rate**
 
-> "Watch the hit rate climb as the cache warms up. It starts at zero, then rises as similar questions start matching cached responses."
+> "Percentage of requests served from cache."
 
 **Avg Latency**
 
-> "Cached responses come back in about 100 milliseconds - compared to 5-10 seconds for a full AI call."
+> "Average response time for cache hits."
 
 **Cost Reduction**
 
-> "This shows the percentage of AI costs we're avoiding through caching."
+> "AI costs avoided through caching."
 
 **Total Requests**
 
-> "The count of successfully processed requests."
+> "Total processed requests."
 
 ### Narrate Key Moments
 
@@ -201,6 +203,8 @@ Point to each KPI card as it updates:
 > "To recap: we covered the cost and latency challenge of AI workloads, showed how semantic caching solves it by matching meaning rather than exact words, walked through the code - from vector index creation to the cache decision logic - and saw it working live with real traffic."
 
 > "Semantic caching with ElastiCache Valkey lets you handle AI workloads at scale - faster responses, lower costs, and the ability to handle traffic surges like Black Friday. Thanks for watching!"
+
+> Thank you for watching!
 
 ---
 
