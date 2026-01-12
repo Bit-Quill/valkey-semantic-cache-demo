@@ -61,7 +61,6 @@ This application provides developers and AWS customers with a concrete, measurab
 |------|---------|-----------------|--------|
 | AWS CLI | 2.x | [Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) | `aws --version` |
 | Node.js | 18+ | [nodejs.org](https://nodejs.org/) | `node --version` |
-| AWS CDK | 2.x | `npm install -g aws-cdk` | `cdk --version` |
 | Python | 3.12+ | [python.org](https://www.python.org/) | `python3 --version` |
 | Go | 1.21+ | [go.dev](https://go.dev/dl/) (for Lambda builds) | `go version` |
 
@@ -289,13 +288,11 @@ Hash:
 - [x] SAM template with VPC config for ElastiCache access
 - [x] Deploy and test all actions
 
-### Task 10: CDK Consolidation + AgentCore Deployment Automation (Merged)
+### Task 10: AgentCore Deployment Automation
 
 - [x] CodeBuild automation for AgentCore deployment (eliminates EC2 jump host)
 - [x] Master `deploy.sh` script - single command to deploy all 7 stacks
 - [x] Master `teardown.sh` script - single command to delete all stacks
-- [x] CDK project initialized with ElastiCache and AgentCore stacks (scaffolding)
-- [ ] Complete CDK migration (deferred to post-demo, master scripts achieve the goal)
 
 ### Task 11: Simple Demo UI
 
@@ -305,7 +302,6 @@ Hash:
 - [x] Add polling/auto-refresh logic (every 5s during demo)
 - [x] Style for conference projection (large fonts, high contrast)
 - [ ] Deploy frontend to S3 + CloudFront (or serve from Lambda)
-- [ ] Add UI resources to CDK stack (optional)
 
 ### Task 12: Demo Script Simplification
 
