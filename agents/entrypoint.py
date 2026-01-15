@@ -22,8 +22,8 @@ from cache_constants import (
     KEY_PREFIX_REQUEST_RESPONSE,
     KEY_PREFIX_VECTOR,
     VECTOR_DIM,
-    CLAUDE_SONNET_4_INPUT_COST,
-    CLAUDE_SONNET_4_OUTPUT_COST,
+    NOVA_PREMIER_INPUT_COST,
+    NOVA_PREMIER_OUTPUT_COST,
 )
 from support_agent import invoke_agent
 
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 ELASTICACHE_ENDPOINT = os.environ.get("ELASTICACHE_ENDPOINT", "localhost")
 ELASTICACHE_PORT = int(os.environ.get("ELASTICACHE_PORT", "6379"))
 SIMILARITY_THRESHOLD = float(os.environ.get("SIMILARITY_THRESHOLD", "0.80"))
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "amazon.titan-embed-text-v2:0")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "amazon.nova-embed-text-v1:0")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
 
 # This is the serverless runtime for running Titan Embeddings only - not to
@@ -70,10 +70,15 @@ def estimate_tokens(text: str) -> int:
 
 
 def generate_embedding(text: str) -> list[float]:
-    """Generate Titan embeddings for the passed in text parameter."""
+    """Generate Nova embeddings for the passed in text parameter."""
+    request_body = {
+        "inputText": text,
+        "dimensions": VECTOR_DIM,
+        "embeddingTypes": ["float"],
+    }
     response = bedrock_runtime.invoke_model(
         modelId=EMBEDDING_MODEL,
-        body=json.dumps({"inputText": text, "dimensions": VECTOR_DIM}),
+        body=json.dumps(request_body),
     )
     return json.loads(response["body"].read())["embedding"]
 
@@ -150,8 +155,8 @@ def cache_response(request_text: str, response_text: str, embedding: list[float]
     )
     
     # Calculate cost in dollars
-    cost = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
-            output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
+    cost = (input_tokens * NOVA_PREMIER_INPUT_COST / 1_000_000 +
+            output_tokens * NOVA_PREMIER_OUTPUT_COST / 1_000_000)
 
     client.hset(
         rr_key,
@@ -272,8 +277,8 @@ def invoke(request):
             # Estimate input tokens for current request, use cached output tokens
             input_tokens = estimate_tokens(request_text)
             output_tokens = int(cached.get("tokens_output", 0))
-            cost_avoided = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
-                          output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
+            cost_avoided = (input_tokens * NOVA_PREMIER_INPUT_COST / 1_000_000 + 
+                          output_tokens * NOVA_PREMIER_OUTPUT_COST / 1_000_000)
             
             emit_metrics(cached=True, latency_ms=latency, similarity=similarity, cost_avoided=cost_avoided)
             
@@ -300,8 +305,8 @@ def invoke(request):
     latency = (time.time() - start_time) * 1000
     
     # Calculate actual cost paid for this agent invocation
-    cost_paid = (input_tokens * CLAUDE_SONNET_4_INPUT_COST / 1_000_000 + 
-                 output_tokens * CLAUDE_SONNET_4_OUTPUT_COST / 1_000_000)
+    cost_paid = (input_tokens * NOVA_PREMIER_INPUT_COST / 1_000_000 + 
+                 output_tokens * NOVA_PREMIER_OUTPUT_COST / 1_000_000)
     
     emit_metrics(cached=False, latency_ms=latency, similarity=similarity, cost_paid=cost_paid)
     

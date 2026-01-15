@@ -74,12 +74,12 @@ Open `agents/entrypoint.py`, show `generate_embedding()` (~line 85):
 
 ```python
 response = bedrock.invoke_model(
-    modelId="amazon.titan-embed-text-v2:0",
+    modelId="amazon.nova-embed-text-v1:0",
     body=json.dumps({"inputText": text, "dimensions": EMBEDDING_DIM})  # 1024
 )
 ```
 
-> "When a question comes in, we convert it to a 1024-dimensional vector using Bedrock Titan Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
+> "When a question comes in, we convert it to a 1024-dimensional vector using Amazon Nova Embeddings. This vector captures the **meaning** of the question - similar questions produce similar vectors."
 
 ### 3.3 Cache Lookup
 
@@ -146,7 +146,7 @@ In the Demo UI:
 
 Click **Start Demo**
 
-> "Once we hit the “Start Demo” button, this triggered a traffic simulation - almost 700 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
+> "Once we hit the “Start Demo” button, this triggered a traffic simulation - more than 1000 customer questions over 3 minutes, ramping from 1 to 11 requests per second."
 
 ### Watch the Metrics [FAST FORWARD x3-4] (3:25 - 4:25)
 
@@ -212,7 +212,7 @@ Point to each KPI card as it updates:
 
 **Q: How does it know questions are similar?**
 
-> "We use Titan Embeddings to convert questions into 1024-dimensional vectors. Similar meanings produce vectors that are close together in that space. We measure closeness using cosine similarity."
+> "We use Nova Embeddings to convert questions into 1024-dimensional vectors. Similar meanings produce vectors that are close together in that space. We measure closeness using cosine similarity."
 
 **Q: What about accuracy? Will it return wrong answers?**
 
