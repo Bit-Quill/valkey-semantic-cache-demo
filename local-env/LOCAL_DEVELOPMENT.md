@@ -7,10 +7,60 @@ This guide covers running the semantic cache demo locally for development and te
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) package manager
 - Go 1.21+ (for ramp-up simulator)
-- AWS CLI configured
-- Docker/Finch/Podman (for Valkey container)
+- AWS CLI configured with `semantic-cache-demo` profile
+- AWS SAM CLI
+- Docker Desktop running
 
-## 1. Start Local Valkey
+## Demo UI Local Testing
+
+### 1. Install Lambda Dependencies
+
+```bash
+cd lambda/demo_ui_api
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Build SAM Project
+
+```bash
+cd local-env
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam build --region us-east-2
+```
+
+### 3. Start Local API
+
+```bash
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam local start-api \
+  --region us-east-2 \
+  --profile semantic-cache-demo \
+  --port 3000 \
+  --docker-network host
+```
+
+### 4. Test Endpoints
+
+```bash
+# Get metrics (reads from CloudWatch in the cloud)
+curl -s localhost:3000/metrics
+
+# Start demo (invokes cloud Lambda)
+curl -X POST localhost:3000/start
+
+# Reset cache (invokes cloud Lambda)
+curl -X POST localhost:3000/reset
+```
+
+### 5. Open the UI
+
+Open `local-env/index.html` in your browser.
+
+---
+
+## Agent Local Testing
+
+### 1. Start Local Valkey
 
 Run a Valkey container with vector search support:
 
@@ -18,9 +68,7 @@ Run a Valkey container with vector search support:
 docker run -d --name valkey -p 6379:6379 valkey/valkey-bundle:latest
 ```
 
-## 2. Create Vector Index
-
-The semantic cache requires a vector index for similarity search:
+### 2. Create Vector Index
 
 ```bash
 cd agents
@@ -29,12 +77,11 @@ uv run python ../infrastructure/elasticache_config/create_vector_index.py
 ```
 
 This creates the `idx:requests` index with:
-
 - 1024 dimensions (Titan Embed Text v2)
 - COSINE distance metric
 - HNSW algorithm (M=16, EF_CONSTRUCTION=200)
 
-## 3. Deploy CloudWatch Dashboard
+### 3. Deploy CloudWatch Dashboard
 
 The only AWS infrastructure needed for local development is the CloudWatch dashboard:
 
@@ -48,12 +95,7 @@ To tear down when done:
 ./scripts/teardown-cloudwatch-dashboard.sh
 ```
 
-## 4. Configure AWS Credentials
-
-Ensure your AWS profile has permissions for:
-
-- `bedrock:InvokeModel` (Titan Embeddings, Claude/Nova models)
-- `cloudwatch:PutMetricData` (for metrics emission)
+### 4. Configure AWS Credentials
 
 ```bash
 export AWS_PROFILE=semantic-cache-demo
@@ -66,7 +108,7 @@ Verify access:
 aws bedrock list-foundation-models --query "modelSummaries[?contains(modelId, 'titan-embed')]" --output table
 ```
 
-## 5. Set Embedding Model
+### 5. Set Embedding Model
 
 > **Note:** `amazon.nova-embed-text-v1:0` is only available in `us-east-1` outside of VPC. For `us-east-2` (default), use Titan:
 
@@ -81,9 +123,7 @@ export AWS_REGION=us-east-1
 export EMBEDDING_MODEL=amazon.nova-embed-text-v1:0
 ```
 
-## 6. Generate requirements.txt
-
-The `agentcore launch --local` command requires `requirements.txt` (doesn't support `pyproject.toml` directly):
+### 6. Generate requirements.txt
 
 ```bash
 cd agents
@@ -92,12 +132,10 @@ uv pip compile pyproject.toml -o requirements.txt
 
 > **Note:** `requirements.txt` is gitignored - regenerate after dependency changes.
 
-## 7. Configure AgentCore
-
-Run the configuration wizard:
+### 7. Configure AgentCore
 
 ```bash
-agentcore configure -e entrypoint.py
+agentcore configure --disable-memory -e entrypoint.py
 ```
 
 **Recommended options:**
@@ -114,9 +152,7 @@ agentcore configure -e entrypoint.py
 | Request headers | `no` |
 | Long-term memory | `no` |
 
-This creates `.bedrock_agentcore.yaml` (gitignored).
-
-## 8. Launch Locally
+### 8. Launch Locally
 
 ```bash
 cd agents
@@ -127,7 +163,7 @@ agentcore launch --local
 
 This starts a local server at `http://localhost:8080`.
 
-## 9. Invoke Locally
+### 9. Invoke Locally
 
 In a **separate terminal**:
 
@@ -138,7 +174,7 @@ export AWS_PROFILE=semantic-cache-demo
 agentcore invoke --local '{"request_text": "My order #12345 has been stuck in preparing for 3 days. What is going on?"}'
 ```
 
-### Expected Response (Cache Miss - First Request)
+#### Expected Response (Cache Miss - First Request)
 
 ```json
 {
@@ -149,7 +185,7 @@ agentcore invoke --local '{"request_text": "My order #12345 has been stuck in pr
 }
 ```
 
-### Test Cache Hit (Semantically Similar Query)
+#### Test Cache Hit (Semantically Similar Query)
 
 ```bash
 agentcore invoke --local '{"request_text": "My order has been stuck in preparing status for 3 days. What is happening?"}'
@@ -166,7 +202,7 @@ Expected:
 }
 ```
 
-## 10. Run Ramp-Up Simulator
+### 10. Run Ramp-Up Simulator
 
 To run a full load test locally with metrics flowing to CloudWatch:
 
@@ -182,17 +218,25 @@ The simulator automatically detects local mode and:
 
 View results in the CloudWatch dashboard deployed in step 3.
 
-![CloudWatch Dashboard Results](../images/cloudwatch_results_example.png)
+---
 
 ## Troubleshooting
 
+### SAM: "Running AWS SAM projects locally requires a container runtime"
+
+Docker Desktop socket isn't at the default path. Use:
+
+```bash
+DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam local start-api ...
+```
+
+### SAM: Network not found
+
+Use `--docker-network host` to allow the Lambda container to access host network.
+
 ### AccessDeniedException on InvokeModel
 
-```
-User: arn:aws:sts::... is not authorized to perform: bedrock:InvokeModel
-```
-
-**Fix:** Ensure `AWS_PROFILE` is exported in both terminals (launch and invoke).
+Ensure `AWS_PROFILE=semantic-cache-demo` is exported in both terminals.
 
 ### Invalid Model Identifier
 
@@ -205,17 +249,9 @@ ValidationException: The provided model identifier is invalid.
 export EMBEDDING_MODEL=amazon.titan-embed-text-v2:0
 ```
 
-### uv run errors with pyproject.toml
-
-```
-error: Adding requirements from a `pyproject.toml` is not supported in `uv run`
-```
-
-**Fix:** Regenerate `requirements.txt` (Step 6).
-
 ### Cache always misses
 
-Check similarity threshold - default is 0.80. For more aggressive caching:
+Lower the similarity threshold:
 
 ```bash
 export SIMILARITY_THRESHOLD=0.75
@@ -225,6 +261,8 @@ agentcore launch --local
 ### Ramp-up simulator timeouts
 
 Some timeouts are expected during cache warm-up (cache misses take ~40s). Success rate should improve as cache fills. Typical results: 95%+ success rate.
+
+---
 
 ## Environment Variables
 
