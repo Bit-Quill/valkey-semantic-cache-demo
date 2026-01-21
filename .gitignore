@@ -12,6 +12,7 @@ __pycache--/
 # Generated from pyproject.toml for local testing only
 # Production deployments should use pyproject.toml
 agents/requirements.txt
+lambda/cache_management/requirements.txt
 
 # Go build artifacts
 bootstrap
