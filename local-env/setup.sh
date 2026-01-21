@@ -54,6 +54,21 @@ check_command() {
   return 0
 }
 
+check_agentcore() {
+  # Check in agents venv first, then globally
+  if [ -f "$PROJECT_ROOT/agents/.venv/bin/agentcore" ]; then
+    print_success "agentcore found (in agents/.venv)"
+    return 0
+  elif command -v agentcore &> /dev/null; then
+    print_success "agentcore found"
+    return 0
+  else
+    print_error "agentcore is not installed"
+    echo "  Install: cd agents && uv pip install bedrock-agentcore"
+    return 1
+  fi
+}
+
 verify_dependencies() {
   print_step "1/11" "Verifying dependencies..."
   
@@ -65,7 +80,7 @@ verify_dependencies() {
   check_command "aws" "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" || failed=1
   check_command "sam" "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html" || failed=1
   check_command "uv" "curl -LsSf https://astral.sh/uv/install.sh | sh" || failed=1
-  check_command "agentcore" "pip install bedrock-agentcore" || failed=1
+  check_agentcore || failed=1
   
   if [ $failed -eq 1 ]; then
     echo ""
