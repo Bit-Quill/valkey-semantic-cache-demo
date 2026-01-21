@@ -1,9 +1,8 @@
-"""Demo UI API Lambda - metrics, start, reset endpoints."""
+"""Demo UI API Lambda - metrics and reset endpoints."""
 
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from urllib import request, error
 
 import boto3
 
@@ -12,7 +11,6 @@ REGION = os.environ.get("AWS_REGION", "us-east-2")
 CACHE_MGMT_FUNCTION = os.environ.get(
     "CACHE_MGMT_FUNCTION", "semantic-cache-demo-cache-management"
 )
-RAMP_UP_URL = "http://localhost:8081/start"
 
 cloudwatch = boto3.client("cloudwatch", region_name=REGION)
 lambda_client = boto3.client("lambda", region_name=REGION)
@@ -95,18 +93,6 @@ def get_metrics() -> dict:
     }
 
 
-def start() -> dict:
-    """Send POST to local ramp-up simulator."""
-    try:
-        req = request.Request(RAMP_UP_URL, method="POST")
-        with request.urlopen(req, timeout=5) as resp:
-            return {"status": "triggered", "statusCode": resp.status}
-    except error.HTTPError as e:
-        return {"status": "error", "statusCode": e.code, "error": str(e)}
-    except error.URLError as e:
-        return {"status": "error", "statusCode": 503, "error": str(e)}
-
-
 def invoke_lambda(function_name: str, payload: dict) -> dict:
     """Invoke a Lambda function synchronously."""
     resp = lambda_client.invoke(
@@ -134,8 +120,6 @@ def handler(event: dict, context) -> dict:
     try:
         if path == "/metrics" and method == "GET":
             body = get_metrics()
-        elif path == "/start" and method == "POST":
-            body = start()
         elif path == "/reset" and method == "POST":
             body = invoke_lambda(CACHE_MGMT_FUNCTION, {"action": "reset-cache"})
         else:
