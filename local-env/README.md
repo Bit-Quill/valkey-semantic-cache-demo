@@ -8,9 +8,35 @@ This directory contains files for running the complete semantic cache demo local
 - [uv](https://github.com/astral-sh/uv) package manager
 - Go 1.21+ (for ramp-up simulator)
 - AWS CLI configured with `semantic-cache-demo` profile
+- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 - Docker Desktop running
+- [AgentCore CLI](https://github.com/aws/bedrock-agentcore-starter-toolkit) (`pip install bedrock-agentcore`)
 
-## Local Demo Setup
+## Quick Start
+
+```bash
+cd local-env
+./setup.sh
+```
+
+This script:
+1. Verifies all dependencies are installed
+2. Verifies AWS credentials
+3. Starts Valkey container
+4. Creates vector index
+5. Deploys CloudWatch dashboard
+6. Configures and launches AgentCore
+7. Starts ramp-up simulator, cache management, and metrics API
+8. Opens the demo UI in your browser
+
+To stop all services:
+```bash
+./stop.sh
+```
+
+---
+
+## Manual Setup (Alternative)
 
 ### 1. Start Local Valkey
 
@@ -152,6 +178,8 @@ DOCKER_HOST=unix://$HOME/.docker/run/docker.sock sam local start-api ...
 
 | File | Description |
 |------|-------------|
+| `setup.sh` | One-command local setup |
+| `stop.sh` | Stop all local services |
 | `index.html` | Demo UI |
 | `template.yaml` | SAM template for metrics API |
 | `README.md` | This file |
