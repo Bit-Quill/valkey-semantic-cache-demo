@@ -101,13 +101,14 @@
   <div class="status" id="status">Ready</div>
 
   <script>
-    // SAM local runs on port 3000 by default
-    const API = 'http://127.0.0.1:3000';
+    const METRICS_API = 'http://127.0.0.1:3000';
+    const SIMULATOR_API = 'http://127.0.0.1:8081';
+    const CACHE_API = 'http://127.0.0.1:8082';
     let polling = null;
 
     async function fetchMetrics() {
       try {
-        const res = await fetch(`${API}/metrics`);
+        const res = await fetch(`${METRICS_API}/metrics`);
         const data = await res.json();
         document.getElementById('hitRate').textContent = data.cacheHitRate.toFixed(1) + '%';
         document.getElementById('latency').textContent = data.avgLatencyMs.toFixed(0) + 'ms';
@@ -122,7 +123,7 @@
       document.getElementById('status').textContent = 'Demo running...';
       document.getElementById('status').className = 'status active';
       try {
-        await fetch(`${API}/start`, { method: 'POST' });
+        await fetch(`${SIMULATOR_API}/start`, { method: 'POST' });
         if (!polling) {
           polling = setInterval(fetchMetrics, 3000);
         }
@@ -137,8 +138,8 @@
 
     async function resetCache() {
       try {
-        await fetch(`${API}/reset`, { method: 'POST' });
-        document.getElementById('status').textContent = 'Cache reset triggered';
+        await fetch(`${CACHE_API}/reset`, { method: 'POST' });
+        document.getElementById('status').textContent = 'Cache reset';
         setTimeout(() => {
           document.getElementById('status').textContent = 'Ready';
           document.getElementById('status').className = 'status';
