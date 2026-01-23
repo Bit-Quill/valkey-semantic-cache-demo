@@ -58,17 +58,14 @@ check_agentcore() {
   # Check in agents venv first, then globally
   if [ -f "$PROJECT_ROOT/agents/.venv/bin/agentcore" ]; then
     print_success "agentcore found (in agents/.venv)"
+    return 0
   elif command -v agentcore &> /dev/null; then
     print_success "agentcore found"
+    return 0
   else
-    cd "$PROJECT_ROOT/agents"
-    if [ ! -d ".venv" ]; then
-        print_info "Creating Python virtual environment..."
-        uv venv > /dev/null
-    fi
-
-    source .venv/bin/activate
-    uv pip install -q bedrock-agentcore boto3 bedrock-agentcore-starter-toolkit strands-agents > /dev/null 2>&1
+    print_error "agentcore is not installed"
+    echo "  Install: cd agents && uv pip install bedrock-agentcore"
+    return 1
   fi
 }
 
@@ -378,7 +375,7 @@ main() {
   echo "Profile: $AWS_PROFILE"
   echo "Region:  $AWS_REGION"
   echo ""
-
+  
   verify_dependencies
   verify_aws_credentials
   start_valkey
